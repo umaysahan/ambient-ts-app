@@ -13,6 +13,7 @@ interface CommentInputProps {
 
 export default function CommentInput(props: CommentInputProps) {
     const inputRef = useRef<HTMLInputElement | null>(null);
+    const [inputLength, setInputLength] = useState(0);
     const _characterLimit = 180;
     const [message, setMessage] = useState('');
     const _onKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -21,12 +22,19 @@ export default function CommentInput(props: CommentInputProps) {
 
         if (pressedKey == 'Enter' && inputVal.trim().length > 0) {
             sendAction(inputVal);
+            setInputLength(0);
         }
         setMessage(inputVal);
     };
 
-    const limitFilledRate = message.length / _characterLimit;
-    const aboutFilled = limitFilledRate > 0.7;
+    const shouldShowCircularProgressBar = inputLength > 140;
+    const fillPercentage = (inputLength / _characterLimit) * 100;
+
+    const handleInputChange = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        const newMessage = e.currentTarget.value;
+        setMessage(newMessage);
+        setInputLength(newMessage.length);
+    };
 
     const {
         walletModal: { open: openWalletModal },
@@ -52,6 +60,7 @@ export default function CommentInput(props: CommentInputProps) {
         if (inputRef.current) {
             inputRef.current.value = '';
         }
+        setInputLength(0);
     };
 
     return (
@@ -64,7 +73,8 @@ export default function CommentInput(props: CommentInputProps) {
                             placeholder='ENTER MESSAGE...'
                             onKeyUp={_onKeyUp}
                             onKeyDown={_onKeyDown}
-                            className={`${aboutFilled ? styles.about_filled : ''} `}
+                            onInput={handleInputChange}
+                            className={`${inputLength > 140 ? styles.about_filled : ''} `}
                         />
                         <AiOutlineSend
                             onClick={() => {
@@ -72,15 +82,13 @@ export default function CommentInput(props: CommentInputProps) {
                             }}
                             size={15}
                         />
-                        {aboutFilled && (
+                        {shouldShowCircularProgressBar && (
                             <>
                                 <div className={styles.progress_wrapper}>
                                     <div className={styles.circular_progress}>
                                         <CircularProgressBarForComments
                                             radius={6}
-                                            fillPercentage={
-                                                limitFilledRate * 100
-                                            }
+                                            fillPercentage={fillPercentage}
                                         />
                                     </div>
                                     <span className={styles.character_limit}>
