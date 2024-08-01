@@ -1,16 +1,26 @@
+import Seperator from '../../../components/Futa/Seperator/Seperator';
+import Divider from '../../../components/Futa/Divider/FutaDivider';
 import Swap from '../../platformAmbient/Trade/Swap/Swap';
 
+import Trade from '../../platformAmbient/Trade/Trade';
 import styles from './SwapFuta.module.css';
 
-import logo from '../../../assets/futa/logos/homeLogo.svg';
+// import logo from '../../../assets/futa/logos/homeLogo.svg';
 
 function SwapFuta() {
     return (
         <section className={styles.mainSection}>
             <div className={styles.chartSection}>
-                <img src={logo} alt='' />
+                <Divider count={2} />
+                <Trade />
             </div>
-            <Swap isOnTradeRoute />
+
+            <Seperator dots={100} />
+
+            <div>
+                <Divider count={2} />
+                <Swap isOnTradeRoute />
+            </div>
         </section>
     );
 }

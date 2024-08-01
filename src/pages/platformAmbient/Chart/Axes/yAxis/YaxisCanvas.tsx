@@ -35,6 +35,7 @@ import {
 import { RangeContext } from '../../../../../contexts/RangeContext';
 import { PoolContext } from '../../../../../contexts/PoolContext';
 import useDollarPrice from '../../ChartUtils/getDollarPrice';
+import { BrandContext } from '../../../../../contexts/BrandContext';
 
 interface yAxisIF {
     scaleData: scaleData | undefined;
@@ -133,6 +134,8 @@ function YAxisCanvas(props: yAxisIF) {
     const location = useLocation();
 
     const getDollarPrice = useDollarPrice();
+
+    const { platformName } = useContext(BrandContext);
 
     useEffect(() => {
         if (scaleData) {
@@ -539,9 +542,10 @@ function YAxisCanvas(props: yAxisIF) {
                         yScale(secondPointInDenom) - yScale(firstPointInDenom);
 
                     const style = getComputedStyle(canvas);
-                    const darkFillColor = style.getPropertyValue('--accent1');
+                    const downCandleBodyColor =
+                        style.getPropertyValue('--accent1');
 
-                    const d3LightFillColor = d3.color(darkFillColor);
+                    const d3LightFillColor = d3.color(downCandleBodyColor);
 
                     if (d3LightFillColor) d3LightFillColor.opacity = 0.075;
 
@@ -560,10 +564,12 @@ function YAxisCanvas(props: yAxisIF) {
                         context,
                         yScale(shapeDataWithDenom),
                         X,
-                        darkFillColor
-                            ? darkFillColor
+                        downCandleBodyColor
+                            ? downCandleBodyColor
                             : 'rgba(115, 113, 252, 1)',
-                        'white',
+                        ['futa'].includes(platformName)
+                            ? 'black'
+                            : 'rgb(214, 214, 214)',
                         shapePoint,
                         undefined,
                         yAxisCanvasWidth,
@@ -931,8 +937,8 @@ function YAxisCanvas(props: yAxisIF) {
             ref={d3Yaxis}
             style={{
                 width: yAxisWidth,
-                gridColumn: 5,
-                gridRow: 3,
+                gridColumn: 2,
+                gridRow: 1,
             }}
         ></d3fc-canvas>
     );

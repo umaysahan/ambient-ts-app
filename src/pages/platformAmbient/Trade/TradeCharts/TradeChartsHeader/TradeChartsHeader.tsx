@@ -9,11 +9,18 @@ import { FiCopy } from 'react-icons/fi';
 import TradeChartsTokenInfo from '../TradeChartsComponents/TradeChartsTokenInfo';
 import { useSimulatedIsPoolInitialized } from '../../../../../App/hooks/useSimulatedIsPoolInitialized';
 import { FlexContainer } from '../../../../../styled/Common';
-import { HeaderButtons } from '../../../../../styled/Components/Chart';
+import {
+    HeaderButtons,
+    // SwitchButton,
+} from '../../../../../styled/Components/Chart';
 import { PoolContext } from '../../../../../contexts/PoolContext';
 import { CandleContext } from '../../../../../contexts/CandleContext';
 import { BsFullscreen } from 'react-icons/bs';
 import { TradeDataContext } from '../../../../../contexts/TradeDataContext';
+import { IoSettingsOutline } from 'react-icons/io5';
+import useMediaQuery from '../../../../../utils/hooks/useMediaQuery';
+// import { IoSettingsOutline } from 'react-icons/io5';
+// import { BrandContext } from '../../../../../contexts/BrandContext';
 
 export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
     const {
@@ -24,13 +31,21 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
         chartHeights,
         tradeTableState,
         isCandleDataNull,
+        contextmenu,
+        setContextmenu,
+        setContextMenuPlacement,
     } = useContext(ChartContext);
 
     const { isTradeDollarizationEnabled, setIsTradeDollarizationEnabled } =
         useContext(PoolContext);
 
-    const { isCondensedModeEnabled, setIsCondensedModeEnabled } =
-        useContext(CandleContext);
+    const {
+        isCondensedModeEnabled,
+        setIsCondensedModeEnabled,
+        // showFutaCandles,
+        // setShowFutaCandles,
+    } = useContext(CandleContext);
+
     const {
         baseToken: { symbol: baseTokenSymbol },
         quoteToken: { symbol: quoteTokenSymbol },
@@ -41,6 +56,8 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
     const {
         snackbar: { open: openSnackbar },
     } = useContext(AppStateContext);
+
+    // const { platformName } = useContext(BrandContext);
 
     const isPoolInitialized = useSimulatedIsPoolInitialized();
 
@@ -66,6 +83,22 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
 
     const graphSettingsContent = (
         <FlexContainer justifyContent='flex-end' alignItems='center' gap={8}>
+            {/* {['futa'].includes(platformName) && (
+                <DefaultTooltip
+                    interactive
+                    title={!showFutaCandles ? 'Candle Chart' : 'Line Chart'}
+                    enterDelay={500}
+                >
+                    <HeaderButtons
+                        onClick={() => setShowFutaCandles(!showFutaCandles)}
+                    >
+                        <SwitchButton isActive={!showFutaCandles}>
+                            CANDLES
+                        </SwitchButton>
+                    </HeaderButtons>
+                </DefaultTooltip>
+            )} */}
+
             <DefaultTooltip
                 interactive
                 title={
@@ -96,7 +129,9 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
                 interactive
                 title={
                     isTradeDollarizationEnabled
-                        ? `Switch to prices in ${isDenomBase ? quoteTokenSymbol : baseTokenSymbol}`
+                        ? `Switch to prices in ${
+                              isDenomBase ? quoteTokenSymbol : baseTokenSymbol
+                          }`
                         : 'Switch to prices in USD'
                 }
                 enterDelay={500}
@@ -151,12 +186,42 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
                     />
                 </HeaderButtons>
             </DefaultTooltip>
+            <DefaultTooltip
+                interactive
+                title={'Open chart settings'}
+                enterDelay={500}
+                id='chart_settings_tooltip'
+            >
+                <HeaderButtons
+                    mobileHide
+                    onClick={() => {
+                        setContextmenu(!contextmenu);
+                        setContextMenuPlacement(() => {
+                            return {
+                                top: 200,
+                                left: 550,
+                                isReversed: false,
+                            };
+                        });
+                    }}
+                    id='chart_settings_button'
+                >
+                    <IoSettingsOutline
+                        size={20}
+                        id='chart_settings_symbol'
+                        aria-label='Chart settings button'
+                    />
+                </HeaderButtons>
+            </DefaultTooltip>
         </FlexContainer>
     );
 
     return (
         <FlexContainer
             justifyContent='space-between'
+            alignItems={
+                useMediaQuery('(min-width: 2000px)') ? 'center' : 'flex-start'
+            }
             padding={props.tradePage ? ' 8px' : '4px 4px 8px 4px'}
         >
             <TradeChartsTokenInfo />

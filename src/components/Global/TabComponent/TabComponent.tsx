@@ -52,29 +52,37 @@ export default function TabComponent(props: TabPropsIF) {
         setOutsideControl,
         selectedOutsideTab,
         toggleTradeTable,
-        setCurrentTxActiveInTransactions,
-        setCurrentLimitOrderActive,
-        setCurrentPositionActive,
+        // setCurrentTxActiveInTransactions,
+        // setCurrentLimitOrderActive,
+        // setCurrentPositionActive,
+        // activeTradeTab,
+        setActiveTradeTab,
     } = useContext(TradeTableContext);
 
     const { tradeTableState } = useContext(ChartContext);
 
     const [selectedTab, setSelectedTab] = useState(data[0]);
 
-    const resetActiveRow = () => {
-        setCurrentTxActiveInTransactions('');
-        setCurrentLimitOrderActive('');
-        setCurrentPositionActive('');
-    };
+    // const resetActiveRow = () => {
+    //     setCurrentTxActiveInTransactions('');
+    //     setCurrentLimitOrderActive('');
+    //     setCurrentPositionActive('');
+    // };
 
-    useEffect(() => {
-        resetActiveRow();
-    }, [selectedTab.label]);
+    // useEffect(() => {
+    //     resetActiveRow();
+    // }, [selectedTab.label]);
 
     function handleSelectedTab(item: tabData) {
         setOutsideControl(false);
         setSelectedTab(item);
-
+        if (
+            ['transactions', 'limits', 'liquidity'].includes(
+                item.label.toLowerCase(),
+            )
+        ) {
+            setActiveTradeTab(item.label.toLowerCase());
+        }
         if (tradeTableState === 'Collapsed') toggleTradeTable();
     }
 
@@ -82,7 +90,16 @@ export default function TabComponent(props: TabPropsIF) {
         const currentTabData = data.find(
             (item) => item.label === selectedTab.label,
         );
-        if (currentTabData) setSelectedTab(currentTabData);
+        if (currentTabData) {
+            setSelectedTab(currentTabData);
+            if (
+                ['transactions', 'limits', 'liquidity'].includes(
+                    currentTabData.label.toLowerCase(),
+                )
+            ) {
+                setActiveTradeTab(currentTabData.label.toLowerCase());
+            }
+        }
     }, [data, outsideControl]);
 
     function handleOutside2() {
@@ -92,6 +109,16 @@ export default function TabComponent(props: TabPropsIF) {
             if (outsideControl) {
                 if (data[selectedOutsideTab]) {
                     setSelectedTab(data[selectedOutsideTab]);
+
+                    if (
+                        ['transactions', 'limits', 'liquidity'].includes(
+                            data[selectedOutsideTab].label.toLowerCase(),
+                        )
+                    ) {
+                        setActiveTradeTab(
+                            data[selectedOutsideTab].label.toLowerCase(),
+                        );
+                    }
                 } else {
                     setSelectedTab(data[0]);
                 }
