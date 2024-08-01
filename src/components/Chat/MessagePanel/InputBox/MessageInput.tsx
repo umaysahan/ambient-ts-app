@@ -477,10 +477,10 @@ export default function MessageInput(props: MessageInputProps) {
                         : undefined,
                 );
             }
-            setInputLength(0);
             props.setIsReplyButtonPressed(false);
             props.setSelectedMessageForReply(undefined);
         }
+        setInputLength(0);
         if (props.sendMessageListener) {
             props.sendMessageListener();
         }
