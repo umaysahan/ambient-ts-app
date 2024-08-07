@@ -667,13 +667,9 @@ export default function MessageInput(props: MessageInputProps) {
                     {showEmojiPicker && (
                         <div
                             className={styles.emojiPicker}
-                            style={{ scrollBehavior: 'auto' }}
+                            style={{ width: '100%' }}
                         >
-                            <span
-                                id='chat-close-emoji-panel-button'
-                                className={styles.emoji_close_button}
-                                onClick={() => setShowEmojiPicker(false)}
-                            >
+                            <span className={styles.emoji_close_button}>
                                 <RiCloseFill
                                     size={20}
                                     title='Close Emoji Picker'
@@ -703,15 +699,13 @@ export default function MessageInput(props: MessageInputProps) {
                                     <li>Enter - sends message directly</li>
                                 </ul>
                             ) : (
-                                <div>
-                                    <>
-                                        <Picker
-                                            pickerStyle={{ width: '18vw' }}
-                                            onEmojiClick={handleEmojiClick}
-                                            disableSkinTonePicker={true}
-                                        />
-                                    </>
-                                </div>
+                                <Picker
+                                    pickerStyle={{
+                                        width: '100%',
+                                    }}
+                                    onEmojiClick={handleEmojiClick}
+                                    disableSkinTonePicker={true}
+                                />
                             )}
                         </div>
                     )}

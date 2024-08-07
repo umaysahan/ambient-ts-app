@@ -11,8 +11,11 @@ import {
     ALCHEMY_API_KEY,
     BLOCK_POLLING_RPC_URL,
     IS_LOCAL_ENV,
+    MAINNET_RPC_URL,
     SCROLL_RPC_URL,
+    SEPOLIA_RPC_URL,
     SHOULD_NON_CANDLE_SUBSCRIPTIONS_RECONNECT,
+    ZERO_ADDRESS,
     supportedNetworks,
 } from '../ambient-utils/constants';
 import { isJsonString } from '../ambient-utils/dataLayer';
@@ -34,6 +37,7 @@ import {
     fetchBlastUserXpData,
     fetchBlockNumber,
     fetchUserXpData,
+    RpcNodeStatus,
 } from '../ambient-utils/api';
 import { BLAST_RPC_URL } from '../ambient-utils/constants/networks/blastNetwork';
 import { AppStateContext } from './AppStateContext';
@@ -46,12 +50,14 @@ interface ChainDataContextIF {
     setGasPriceinGwei: Dispatch<SetStateAction<number | undefined>>;
     lastBlockNumber: number;
     setLastBlockNumber: Dispatch<SetStateAction<number>>;
+    rpcNodeStatus: RpcNodeStatus;
     connectedUserXp: UserXpDataIF;
     connectedUserBlastXp: BlastUserXpDataIF;
     isActiveNetworkBlast: boolean;
     isActiveNetworkScroll: boolean;
     isActiveNetworkMainnet: boolean;
     isActiveNetworkL2: boolean;
+    nativeTokenUsdPrice: number | undefined;
 }
 
 export const ChainDataContext = createContext<ChainDataContextIF>(
@@ -71,8 +77,13 @@ export const ChainDataContextProvider = (props: {
 
     const { chainData, activeNetwork, crocEnv, provider } =
         useContext(CrocEnvContext);
-    const { cachedFetchTokenBalances, cachedTokenDetails, cachedFetchNFT } =
-        useContext(CachedDataContext);
+    const {
+        cachedFetchTokenBalances,
+        cachedTokenDetails,
+        cachedFetchTokenPrice,
+        cachedFetchNFT,
+    } = useContext(CachedDataContext);
+
     const { tokens } = useContext(TokenContext);
 
     const {
@@ -85,6 +96,9 @@ export const ChainDataContextProvider = (props: {
     } = useContext(UserDataContext);
 
     const [lastBlockNumber, setLastBlockNumber] = useState<number>(0);
+
+    const [rpcNodeStatus, setRpcNodeStatus] =
+        useState<RpcNodeStatus>('unknown');
     const [gasPriceInGwei, setGasPriceinGwei] = useState<number | undefined>();
 
     const isActiveNetworkBlast = ['0x13e31', '0xa0c71fd'].includes(
@@ -121,22 +135,38 @@ export const ChainDataContextProvider = (props: {
     const BLOCK_NUM_POLL_MS = isUserIdle ? 15000 : 5000; // poll for new block every 15 seconds when user is idle, every 5 seconds when user is active
 
     async function pollBlockNum(): Promise<void> {
-        // if default RPC is Infura, use key from env variable
-        const nodeUrl =
-            chainData.nodeUrl.toLowerCase().includes('infura') &&
-            import.meta.env.VITE_INFURA_KEY
-                ? chainData.nodeUrl.slice(0, -32) +
-                  import.meta.env.VITE_INFURA_KEY
-                : ['0x13e31'].includes(chainData.chainId) // use blast env variable for blast network
-                  ? BLAST_RPC_URL
-                  : ['0x82750'].includes(chainData.chainId) // use scroll env variable for scroll network
-                    ? SCROLL_RPC_URL
-                    : blockPollingUrl;
+        const nodeUrl = ['0x1'].includes(chainData.chainId)
+            ? MAINNET_RPC_URL
+            : ['0xaa36a7'].includes(chainData.chainId)
+              ? SEPOLIA_RPC_URL
+              : ['0x13e31'].includes(chainData.chainId) // use blast env variable for blast network
+                ? BLAST_RPC_URL
+                : ['0x82750'].includes(chainData.chainId) // use scroll env variable for scroll network
+                  ? SCROLL_RPC_URL
+                  : blockPollingUrl;
+        // const nodeUrl =
+        //     chainData.nodeUrl.toLowerCase().includes('infura') &&
+        //     import.meta.env.VITE_INFURA_KEY
+        //         ? chainData.nodeUrl.slice(0, -32) +
+        //           import.meta.env.VITE_INFURA_KEY
+        //         : ['0x13e31'].includes(chainData.chainId) // use blast env variable for blast network
+        //           ? BLAST_RPC_URL
+        //           : ['0x82750'].includes(chainData.chainId) // use scroll env variable for scroll network
+        //             ? SCROLL_RPC_URL
+        //             : blockPollingUrl;
         try {
             const lastBlockNumber = await fetchBlockNumber(nodeUrl);
-            if (lastBlockNumber > 0) setLastBlockNumber(lastBlockNumber);
+            // const lastBlockNumber = await fetchBlockNumber(
+            //     'http://scroll-sepolia-rpc.01no.de:8545',
+            // );
+            if (lastBlockNumber > 0) {
+                setLastBlockNumber(lastBlockNumber);
+                setRpcNodeStatus('active');
+            } else {
+                setRpcNodeStatus('inactive');
+            }
         } catch (error) {
-            console.error({ error });
+            setRpcNodeStatus('inactive');
         }
     }
 
@@ -398,6 +428,23 @@ export const ChainDataContextProvider = (props: {
         activeNetwork.graphCacheUrl,
     ]);
 
+    const [nativeTokenUsdPrice, setNativeTokenUsdPrice] = useState<
+        number | undefined
+    >();
+
+    useEffect(() => {
+        if (!crocEnv) return;
+        Promise.resolve(
+            cachedFetchTokenPrice(ZERO_ADDRESS, chainData.chainId, crocEnv),
+        ).then((price) => {
+            if (price?.usdPrice !== undefined) {
+                setNativeTokenUsdPrice(price.usdPrice);
+            } else {
+                setNativeTokenUsdPrice(undefined);
+            }
+        });
+    }, [crocEnv, chainData.chainId]);
+
     const [connectedUserXp, setConnectedUserXp] = React.useState<UserXpDataIF>({
         dataReceived: false,
         data: undefined,
@@ -463,6 +510,7 @@ export const ChainDataContextProvider = (props: {
     const chainDataContext = {
         lastBlockNumber,
         setLastBlockNumber,
+        rpcNodeStatus,
         gasPriceInGwei,
         connectedUserXp,
         connectedUserBlastXp,
@@ -471,6 +519,7 @@ export const ChainDataContextProvider = (props: {
         isActiveNetworkScroll,
         isActiveNetworkMainnet,
         isActiveNetworkL2,
+        nativeTokenUsdPrice,
     };
 
     return (

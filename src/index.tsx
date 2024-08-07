@@ -10,12 +10,17 @@ import { createWeb3Modal, defaultConfig } from '@web3modal/ethers/react';
 
 import { GlobalContexts } from './contexts/GlobalContexts';
 import {
+    brand,
     GLOBAL_MODAL_PORTAL_ID,
     supportedNetworks,
     WALLETCONNECT_PROJECT_ID,
 } from './ambient-utils/constants';
-import scrollLogo from './assets/images/networks/scroll.png';
+import scrollLogo from './assets/images/networks/scroll_logo.webp';
 import blastLogo from './assets/images/networks/blast_logo.png';
+import blastSepoliaLogo from './assets/images/networks/blast_sepolia_logo.webp';
+import scrollSepoliaLogo from './assets/images/networks/scroll_sepolia_logo.webp';
+import sepoliaLogo from './assets/images/networks/sepolia_logo.webp';
+import ethLogo from './assets/images/networks/ethereum_logo.svg';
 
 /* Perform a single forcible reload when the page first loads. Without this, there
  * are issues with Metamask and Chrome preloading. This shortcircuits preloading, at the
@@ -58,10 +63,12 @@ const modal = createWeb3Modal({
     chains: Object.values(supportedNetworks).map((network) => network.chain),
     projectId: WALLETCONNECT_PROJECT_ID as string,
     chainImages: {
+        1: ethLogo,
         81457: blastLogo,
-        168587773: blastLogo,
-        534351: scrollLogo,
+        168587773: blastSepoliaLogo,
+        534351: scrollSepoliaLogo,
         534352: scrollLogo,
+        11155111: sepoliaLogo,
     },
     termsConditionsUrl: '/terms',
     privacyPolicyUrl: '/privacy',
@@ -70,7 +77,7 @@ const modal = createWeb3Modal({
         '--w3m-color-mix': 'var(--dark2)',
         '--w3m-color-mix-strength': 10,
         '--w3m-font-family': 'var(--font-family)',
-        '--w3m-accent': 'var(--accent1)',
+        '--w3m-accent': brand === 'futa' ? '#0CCDFF' : 'var(--accent1)',
     },
 });
 

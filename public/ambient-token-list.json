@@ -155,14 +155,6 @@
             "logoURI": "https://miablastsoff.com/images/logo.png"
         },
         {
-            "address": "0x76D6556758365e63e48A0DFAfd19C8DBa15F97eE",
-            "chainId": 81457,
-            "decimals": 18,
-            "name": "BIG",
-            "symbol": "BIG",
-            "logoURI": ""
-        },
-        {
             "address": "0x76DA31D7C9CbEAE102aff34D3398bC450c8374c1",
             "chainId": 81457,
             "decimals": 18,
@@ -207,15 +199,6 @@
             "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/29601.png"
         },
         {
-            "address": "0x0B4d0ee29857c3961b380d4ec138EA5814E346b9",
-            "chainId": 81457,
-            "decimals": 18,
-            "fromList": "/ambient-token-list.json",
-            "name": "P@cman Blastoff",
-            "symbol": "$PACM",
-            "logoURI": "https://www.pacman.meme/images/tokens/pacman.svg"
-        },
-        {
             "chainId": 81457,
             "address": "0x5ffd9ebd27f2fcab044c0f0a26a45cb62fa29c06",
             "name": "PacMoon",
@@ -230,15 +213,6 @@
             "fromList": "/ambient-token-list.json",
             "name": "Alien",
             "symbol": "ALIEN",
-            "logoURI": ""
-        },
-        {
-            "address": "0x5FE8534a6F96cb01261Bd96e98c17C2c1Cab3204",
-            "chainId": 81457,
-            "decimals": 18,
-            "fromList": "/ambient-token-list.json",
-            "name": "Baja",
-            "symbol": "BAJA",
             "logoURI": ""
         },
         {
@@ -414,6 +388,14 @@
             "logoURI": ""
         },
         {
+            "name": "Staked USDe",
+            "address": "0x211Cc4DD073734dA055fbF44a2b4667d5E5fE5d2",
+            "symbol": "sUSDe",
+            "decimals": 18,
+            "chainId": 534352,
+            "logoURI": ""
+        },
+        {
             "name": "Wrapped SOL",
             "address": "0xcdf95e1f720caade4b1dc83abfe15400d2a458ad",
             "symbol": "SOL",
@@ -436,6 +418,14 @@
             "decimals": 18,
             "chainId": 534352,
             "logoURI": ""
+        },
+        {
+            "name": "Scrolly The Map",
+            "address": "0xb65aD8d81d1E4Cb2975352338805AF6e39BA8Be8",
+            "symbol": "SCROLLY",
+            "decimals": 18,
+            "chainId": 534352,
+            "logoURI": "https://scrolly.xyz/img/logo.png"
         },
         {
             "name": "Ethena USDe",
@@ -524,6 +514,30 @@
             "decimals": 18,
             "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6B175474E89094C44Da98b954EedeAC495271d0F/logo.png",
             "symbol": "DAI"
+        },
+        {
+            "name": "Native Ether",
+            "address": "0x0000000000000000000000000000000000000000",
+            "chainId": 11155111,
+            "decimals": 18,
+            "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png",
+            "symbol": "ETH"
+        },
+        {
+            "name": "USDC",
+            "address": "0x60bBA138A74C5e7326885De5090700626950d509",
+            "chainId": 11155111,
+            "decimals": 6,
+            "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png",
+            "symbol": "USDC"
+        },
+        {
+            "name": "Wrapped BTC",
+            "address": "0xCA97CC9c1a1dfA54A252DaAFE9b5Cd1E16C81328",
+            "chainId": 11155111,
+            "decimals": 8,
+            "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599/logo.png",
+            "symbol": "WBTC"
         }
     ]
 }

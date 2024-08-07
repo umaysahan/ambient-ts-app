@@ -1,3 +1,4 @@
+import { brand } from './networks';
 export * from './networks';
 export * from './blacklist';
 export * from './defaultTokens';
@@ -53,6 +54,11 @@ export const BLOCK_POLLING_RPC_URL =
         ? import.meta.env.VITE_BLOCK_POLLING_RPC_URL
         : '';
 
+export const MAINNET_RPC_URL =
+    import.meta.env.VITE_MAINNET_RPC_URL !== undefined
+        ? import.meta.env.VITE_MAINNET_RPC_URL
+        : 'https://ethereum-mainnet.core.chainstack.com/55818ec2ac63dfef6ff4d1a74cf14d72';
+
 export const BLAST_RPC_URL =
     import.meta.env.VITE_BLAST_RPC_URL !== undefined
         ? import.meta.env.VITE_BLAST_RPC_URL
@@ -62,6 +68,11 @@ export const SCROLL_RPC_URL =
     import.meta.env.VITE_SCROLL_RPC_URL !== undefined
         ? import.meta.env.VITE_SCROLL_RPC_URL
         : 'https://rpc.scroll.io/';
+
+export const SEPOLIA_RPC_URL =
+    import.meta.env.VITE_SEPOLIA_RPC_URL !== undefined
+        ? import.meta.env.VITE_SEPOLIA_RPC_URL
+        : 'https://ethereum-sepolia-rpc.publicnode.com';
 
 export const ALCHEMY_API_KEY =
     import.meta.env.VITE_ALCHEMY_API_KEY !== undefined
@@ -79,7 +90,7 @@ export const SHOULD_NON_CANDLE_SUBSCRIPTIONS_RECONNECT = true;
 // External links
 export const DOCS_LINK = 'https://docs.ambient.finance/';
 export const GITHUB_LINK = 'https://github.com/CrocSwap';
-export const TWITTER_LINK = 'https://twitter.com/ambient_finance';
+export const TWITTER_LINK = 'https://x.com/ambient_finance';
 export const DISCORD_LINK = 'https://discord.gg/ambient-finance';
 export const MEDIUM_LINK = 'https://crocswap.medium.com/';
 export const CORPORATE_LINK = 'https://www.crocswap.com/';
@@ -92,6 +103,8 @@ export const OVERRIDE_CANDLE_POOL_ID = 36000;
 export const LS_KEY_CHART_SETTINGS = 'chart_settings';
 export const LS_KEY_SUBCHART_SETTINGS = 'subchart_settings';
 export const LS_KEY_ORDER_HISTORY_SETTINGS = 'order_history_settings';
+export const LS_KEY_HIDE_EMPTY_POSITIONS_ON_ACCOUNT =
+    'hide_empty_positions_on_account';
 
 // Icon archive
 export const ETH_ICON_URL =
@@ -122,19 +135,25 @@ export const REQUEST_TIMEOUT_DELAY = import.meta.env.VITE_REQUEST_TIMEOUT_DELAY
 export const NETWORK_ACCESS = import.meta.env.NETWORK_ACCESS || 'disabled';
 export const CACHE_UPDATE_FREQ_IN_MS = 60000; // 1 minute
 
-export const DEFAULT_POPUP_CTA_DISMISSAL_DURATION_MINUTES = import.meta.env
-    .VITE_DEFAULT_POPUP_CTA_DISMISSAL_DURATION_MINUTES
-    ? parseFloat(
-          import.meta.env.VITE_DEFAULT_POPUP_CTA_DISMISSAL_DURATION_MINUTES,
-      )
-    : undefined;
+export const DEFAULT_POPUP_CTA_DISMISSAL_DURATION_MINUTES =
+    brand === 'futa'
+        ? Infinity
+        : import.meta.env.VITE_DEFAULT_POPUP_CTA_DISMISSAL_DURATION_MINUTES
+          ? parseFloat(
+                import.meta.env
+                    .VITE_DEFAULT_POPUP_CTA_DISMISSAL_DURATION_MINUTES,
+            )
+          : undefined;
 
-export const DEFAULT_BANNER_CTA_DISMISSAL_DURATION_MINUTES = import.meta.env
-    .VITE_DEFAULT_BANNER_CTA_DISMISSAL_DURATION_MINUTES
-    ? parseFloat(
-          import.meta.env.VITE_DEFAULT_BANNER_CTA_DISMISSAL_DURATION_MINUTES,
-      )
-    : undefined;
+export const DEFAULT_BANNER_CTA_DISMISSAL_DURATION_MINUTES =
+    brand === 'futa'
+        ? Infinity
+        : import.meta.env.VITE_DEFAULT_BANNER_CTA_DISMISSAL_DURATION_MINUTES
+          ? parseFloat(
+                import.meta.env
+                    .VITE_DEFAULT_BANNER_CTA_DISMISSAL_DURATION_MINUTES,
+            )
+          : undefined;
 
 export const WALLETCONNECT_PROJECT_ID = import.meta.env
     .VITE_WALLETCONNECT_PROJECT_ID
@@ -149,3 +168,5 @@ export const CROCODILE_LABS_LINKS = [
 
 export const LS_USER_VERIFY_TOKEN = 'CHAT_user_verify';
 export const LS_USER_NON_VERIFIED_MESSAGES = 'CHAT_non_verified_messages';
+
+export const CURRENT_AUCTION_VERSION = 1;
