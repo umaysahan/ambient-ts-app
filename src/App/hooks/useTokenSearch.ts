@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState, Dispatch, SetStateAction } from 'react';
-import { TokenIF } from '../../ambient-utils/types';
-import { tokenMethodsIF } from './useTokens';
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 import { ZERO_ADDRESS, tokenListURIs } from '../../ambient-utils/constants';
 import {
-    removeWrappedNative,
-    isUsdcToken,
     isBlastRewardToken,
+    isUsdcToken,
+    removeWrappedNative,
 } from '../../ambient-utils/dataLayer';
+import { TokenIF } from '../../ambient-utils/types';
+import { tokenMethodsIF } from './useTokens';
 
 export const useTokenSearch = (
     chainId: string,
@@ -86,8 +86,10 @@ export const useTokenSearch = (
         // fn to run a token search by name or symbol
         function searchAsNameOrSymbol(): TokenIF[] {
             // check tokens in `allTokenLists` for tokens that match validated input
-            const foundTokens: TokenIF[] =
-                tokens.getTokensByNameOrSymbol(validatedInput);
+            const foundTokens: TokenIF[] = tokens.getTokensByNameOrSymbol(
+                validatedInput,
+                chainId,
+            );
             // return tokens with wrapped native from current chain removed
             return removeWrappedNative(chainId, foundTokens);
         }
@@ -134,7 +136,7 @@ export const useTokenSearch = (
                     : chainId === '0x82750'
                       ? patchLists(
                             tokens.getTokensFromList(tokenListURIs.ambient),
-                            tokens.getTokensFromList(tokenListURIs.scrollTech),
+                            // tokens.getTokensFromList(tokenListURIs.scrollTech),
                             tokens.getTokensFromList(
                                 tokenListURIs.scrollCoingecko,
                             ),
@@ -146,7 +148,12 @@ export const useTokenSearch = (
                                   tokenListURIs.blastCoingecko,
                               ),
                           )
-                        : tokens.getTokensFromList(tokenListURIs.ambient);
+                        : chainId === '0xaa36a7'
+                          ? patchLists(
+                                tokens.getTokensFromList(tokenListURIs.ambient),
+                                tokens.getTokensFromList(tokenListURIs.futa),
+                            )
+                          : tokens.getTokensFromList(tokenListURIs.ambient);
 
             // ERC-20 tokens from connected wallet subject to universe verification
             const verifiedWalletTokens: TokenIF[] = walletTokens.filter(

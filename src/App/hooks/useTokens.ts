@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { tokenListURIs, defaultTokens } from '../../ambient-utils/constants';
-import { TokenIF, TokenListIF } from '../../ambient-utils/types';
+import {
+    defaultTokens,
+    hiddenTokens,
+    tokenListURIs,
+} from '../../ambient-utils/constants';
 import {
     chainNumToString,
-    uriToHttp,
     serializeBigInt,
+    uriToHttp,
 } from '../../ambient-utils/dataLayer';
+import { TokenIF, TokenListIF } from '../../ambient-utils/types';
 
 export interface tokenMethodsIF {
     allDefaultTokens: TokenIF[];
@@ -15,7 +19,11 @@ export interface tokenMethodsIF {
     tokenUniv: TokenIF[];
     getTokenByAddress: (addr: string) => TokenIF | undefined;
     getTokensFromList: (uri: string) => TokenIF[];
-    getTokensByNameOrSymbol: (input: string, exact?: boolean) => TokenIF[];
+    getTokensByNameOrSymbol: (
+        input: string,
+        chn: string,
+        exact?: boolean,
+    ) => TokenIF[];
 }
 
 // keys for data persisted in local storage
@@ -77,11 +85,20 @@ export const useTokens = (
     const tokenMap = useMemo<Map<string, TokenIF>>(() => {
         const retMap = new Map<string, TokenIF>();
         tokenLists
-            // Reverse add, so higher priority lists overwrite lower priority
-            // .reverse()
             .flatMap((tl) => tl.tokens)
             .concat(ackTokens)
-            .filter((t) => chainNumToString(t.chainId) === chainId)
+            .filter((t) => {
+                // First filter by chainId
+                if (chainNumToString(t.chainId) !== chainId) return false;
+
+                // Then check if token is in exclusion list
+                return !hiddenTokens.some(
+                    (excluded) =>
+                        excluded.address.toLowerCase() ===
+                            t.address.toLowerCase() &&
+                        excluded.chainId === t.chainId,
+                );
+            })
             .forEach((t) => {
                 // list URI of this iteration of the token
                 const originatingList: string = t.fromList ?? 'unknown';
@@ -96,6 +113,14 @@ export const useTokens = (
                     deepToken.listedBy = deepToken.listedBy?.concat(
                         tknFromMap.listedBy,
                     );
+                    // prevent overwriting ambient token list values
+                    if (tknFromMap.listedBy?.includes(tokenListURIs.ambient)) {
+                        deepToken.address = tknFromMap.address;
+                        deepToken.symbol = tknFromMap.symbol;
+                        deepToken.name = tknFromMap.name;
+                        deepToken.logoURI = tknFromMap.logoURI;
+                        deepToken.decimals = tknFromMap.decimals;
+                    }
                 }
                 // add updated deep copy to the Map
                 retMap.set(deepToken.address.toLowerCase(), deepToken);
@@ -121,7 +146,13 @@ export const useTokens = (
         if (tokenMap.size) {
             const newArray = [...tokenMap.values()];
             for (const token of tokenBalances ?? []) {
-                if (!newArray.some((tkn) => tkn.address === token.address)) {
+                if (
+                    !newArray.some(
+                        (tkn) =>
+                            tkn.address.toLowerCase() ===
+                            token.address.toLowerCase(),
+                    )
+                ) {
                     newArray.push(token);
                 }
             }
@@ -129,17 +160,32 @@ export const useTokens = (
         } else {
             const newArray = [...defaultTokens];
             for (const token of tokenBalances ?? []) {
-                if (!newArray.some((tkn) => tkn.address === token.address)) {
+                if (
+                    !newArray.some(
+                        (tkn) =>
+                            tkn.address.toLowerCase() ===
+                            token.address.toLowerCase(),
+                    )
+                ) {
                     newArray.push(token);
                 }
             }
             return newArray
                 .filter((tkn: TokenIF) => tkn.chainId === parseInt(chainId))
+                .filter((t) => {
+                    // Then check if token is in exclusion list
+                    return !hiddenTokens.some(
+                        (excluded) =>
+                            excluded.address.toLowerCase() ===
+                                t.address.toLowerCase() &&
+                            excluded.chainId === t.chainId,
+                    );
+                })
                 .map((tkn: TokenIF) =>
                     deepCopyToken(tkn, tkn.fromList ?? tokenListURIs.ambient),
                 );
         }
-    }, [tokenMap.size, tokenBalances]);
+    }, [tokenMap, tokenBalances]);
 
     // fn to make a deep copy of a token data object
     // without this we overrwrite token data in local storage in post-processing
@@ -205,17 +251,28 @@ export const useTokens = (
                 fetchAndFormatList(uri),
             );
         // resolve all promises for token lists
-        Promise.all(tokenListPromises)
-            // remove `undefined` values (URIs that did not produce a valid response)
-            .then((lists) => lists.filter((l) => l !== undefined))
-            // record token lists in local storage + persist in local storage
-            .then((lists) => {
+        Promise.allSettled(tokenListPromises).then((results) => {
+            // Filter out promises that were rejected and extract values from fulfilled ones
+            const fulfilledLists = results
+                .filter(
+                    (
+                        result,
+                    ): result is PromiseFulfilledResult<
+                        TokenListIF | undefined
+                    > => result.status === 'fulfilled',
+                )
+                .map((result) => result.value)
+                .filter((l) => l !== undefined); // remove `undefined` values (URIs that did not produce a valid response)
+
+            // Record token lists in local storage + persist in local storage
+            fulfilledLists.length &&
                 localStorage.setItem(
                     localStorageKeys.tokenLists,
-                    JSON.stringify(lists),
+                    JSON.stringify(fulfilledLists),
                 );
-                setTokenLists(lists as TokenListIF[]);
-            });
+            fulfilledLists.length &&
+                setTokenLists(fulfilledLists as TokenListIF[]);
+        });
     }, []);
 
     // fn to verify a token is on a known list or user-acknowledged
@@ -282,18 +339,29 @@ export const useTokens = (
     // fn to return all tokens where name or symbol matches search input
     // can return just exact matches or exact + partial matches
     const getTokensByNameOrSymbol = useCallback(
-        (input: string, exact = false): TokenIF[] => {
+        (input: string, chn: string, exact = false): TokenIF[] => {
             // search input fixed for casing and with whitespace trimmed
             const cleanedInput: string = input.trim().toLowerCase();
 
             // fn to search for exact matches
             const searchExact = (): TokenIF[] => {
                 // return tokens where name OR symbol exactly matches search string
-                return tokenUniv.filter(
-                    (tkn: TokenIF) =>
-                        tkn.name.toLowerCase() === cleanedInput ||
-                        tkn.symbol.toLowerCase() === cleanedInput,
-                );
+                return tokenUniv
+                    .filter((tkn: TokenIF) => tkn.chainId === parseInt(chn))
+                    .filter(
+                        (tkn: TokenIF) =>
+                            tkn.name.toLowerCase() === cleanedInput ||
+                            tkn.symbol.toLowerCase() === cleanedInput,
+                    )
+                    .filter((t) => {
+                        // Then check if token is in exclusion list
+                        return !hiddenTokens.some(
+                            (excluded) =>
+                                excluded.address.toLowerCase() ===
+                                    t.address.toLowerCase() &&
+                                excluded.chainId === t.chainId,
+                        );
+                    });
             };
             // fn to search for partial matches (includes exact matches too)
             const searchPartial = (): TokenIF[] => {
@@ -301,22 +369,32 @@ export const useTokens = (
                 const exactMatches: TokenIF[] = [];
                 const partialMatches: TokenIF[] = [];
                 // iterate over tokens to look for matches
-                tokenUniv.forEach((tkn: TokenIF) => {
-                    if (
-                        tkn.name.toLowerCase() === cleanedInput ||
-                        tkn.symbol.toLowerCase() === cleanedInput
-                    ) {
-                        // push exact matches to the appropriate array
-                        exactMatches.push(tkn);
-                    } else if (
-                        tkn.name.toLowerCase().includes(cleanedInput) ||
-                        tkn.symbol.toLowerCase().includes(cleanedInput)
-                    ) {
-                        // push partial matches to the appropriate array
-                        partialMatches.push(tkn);
-                    }
+                tokenUniv
+                    .filter((tkn: TokenIF) => tkn.chainId === parseInt(chn))
+                    .forEach((tkn: TokenIF) => {
+                        if (
+                            tkn.name.toLowerCase() === cleanedInput ||
+                            tkn.symbol.toLowerCase() === cleanedInput
+                        ) {
+                            // push exact matches to the appropriate array
+                            exactMatches.push(tkn);
+                        } else if (
+                            tkn.name.toLowerCase().includes(cleanedInput) ||
+                            tkn.symbol.toLowerCase().includes(cleanedInput)
+                        ) {
+                            // push partial matches to the appropriate array
+                            partialMatches.push(tkn);
+                        }
+                    });
+                return exactMatches.concat(partialMatches).filter((t) => {
+                    // Then check if token is in exclusion list
+                    return !hiddenTokens.some(
+                        (excluded) =>
+                            excluded.address.toLowerCase() ===
+                                t.address.toLowerCase() &&
+                            excluded.chainId === t.chainId,
+                    );
                 });
-                return exactMatches.concat(partialMatches);
             };
             // return requested results
             return exact ? searchExact() : searchPartial();

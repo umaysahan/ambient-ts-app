@@ -1,46 +1,52 @@
+import { bigIntToFloat } from '@crocswap-libs/sdk';
 import { lookupChain } from '@crocswap-libs/sdk/dist/context';
+import { Provider } from 'ethers';
+import { NetworkIF } from '../../types/NetworkIF';
 import {
     scrollSepoliaETH,
     scrollSepoliaUSDC,
     scrollSepoliaWBTC,
 } from '../defaultTokens';
-import { NetworkIF } from '../../types/NetworkIF';
-import { TopPool } from './TopPool';
-import { Provider } from 'ethers';
 import { GCGO_TESTNET_URL } from '../gcgo';
-import { bigIntToFloat } from '@crocswap-libs/sdk';
+import { TopPool } from './TopPool';
 
-const chain = {
-    chainId: 534351,
+const chainIdHex = '0x8274f';
+const chainSpecFromSDK = lookupChain(chainIdHex);
+
+const chainSpecForWalletConnector = {
+    chainId: Number(chainIdHex),
     name: 'Scroll Sepolia',
     currency: 'ETH',
     rpcUrl: 'https://sepolia-rpc.scroll.io/',
-    explorerUrl: 'https://sepolia.scrollscan.dev',
+    explorerUrl: 'https://sepolia.scrollscan.dev/',
 };
 
 export const scrollSepolia: NetworkIF = {
-    chainId: '0x8274f',
-    graphCacheUrl: GCGO_TESTNET_URL,
-    evmRpcUrl: 'https://sepolia-rpc.scroll.io/',
-    chain: chain,
-    shouldPollBlock: true,
-    marketData: '0x1',
+    chainId: chainIdHex,
+    chainSpec: chainSpecFromSDK,
+    GCGO_URL: GCGO_TESTNET_URL,
+    evmRpcUrl: chainSpecForWalletConnector.rpcUrl,
+    chainSpecForWalletConnector: chainSpecForWalletConnector,
     defaultPair: [scrollSepoliaETH, scrollSepoliaUSDC],
+    poolIndex: chainSpecFromSDK.poolIndex,
+    gridSize: chainSpecFromSDK.gridSize,
+    blockExplorer: chainSpecForWalletConnector.explorerUrl,
+    displayName: chainSpecForWalletConnector.name,
     topPools: [
         new TopPool(
             scrollSepoliaETH,
             scrollSepoliaUSDC,
-            lookupChain('0x8274f').poolIndex,
+            chainSpecFromSDK.poolIndex,
         ),
         new TopPool(
             scrollSepoliaETH,
             scrollSepoliaWBTC,
-            lookupChain('0xaa36a7').poolIndex,
+            chainSpecFromSDK.poolIndex,
         ),
         new TopPool(
             scrollSepoliaUSDC,
             scrollSepoliaWBTC,
-            lookupChain('0xaa36a7').poolIndex,
+            chainSpecFromSDK.poolIndex,
         ),
     ],
     getGasPriceInGwei: async (provider?: Provider) => {

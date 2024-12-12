@@ -1,20 +1,16 @@
-// START: Import React and Dongles
 import { Dispatch, memo, SetStateAction, useContext } from 'react';
+import { VscClose } from 'react-icons/vsc';
 import { useNavigate } from 'react-router-dom';
 import settingsIcon from '../../../../assets/images/icons/settings.svg';
-import { VscClose } from 'react-icons/vsc';
 
-// START: Import JSX Components
 import TransactionSettingsModal from '../../../Global/TransactionSettingsModal/TransactionSettingsModal';
 
-// START: Import Local Files
+import { RangeContext } from '../../../../contexts/RangeContext';
+import { TradeDataContext } from '../../../../contexts/TradeDataContext';
+import { UserPreferenceContext } from '../../../../contexts/UserPreferenceContext';
+import { useModal } from '../../../Global/Modal/useModal';
 import styles from './RepositionHeader.module.css';
 import { useRepoExitPath } from './useRepoExitPath';
-import { UserPreferenceContext } from '../../../../contexts/UserPreferenceContext';
-import { RangeContext } from '../../../../contexts/RangeContext';
-import { useModal } from '../../../Global/Modal/useModal';
-import { TradeModuleHeaderContainer } from '../../../../styled/Components/TradeModules';
-import { TradeDataContext } from '../../../../contexts/TradeDataContext';
 
 interface propsIF {
     positionHash: string;
@@ -44,14 +40,7 @@ function RepositionHeader(props: propsIF) {
 
     return (
         <>
-            <TradeModuleHeaderContainer
-                flexDirection='row'
-                alignItems='center'
-                justifyContent='space-between'
-                fullWidth
-                fontSize='header1'
-                color='text2'
-            >
+            <header className={styles.main_container}>
                 <img
                     className={styles.settings_icon}
                     src={settingsIcon}
@@ -70,7 +59,7 @@ function RepositionHeader(props: propsIF) {
                         setCurrentRangeInReposition('');
                     }}
                 />
-            </TradeModuleHeaderContainer>
+            </header>
             {isOpen && (
                 <TransactionSettingsModal
                     module='Reposition'

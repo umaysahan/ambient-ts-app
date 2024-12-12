@@ -1,6 +1,6 @@
 import React, { createContext } from 'react';
 
-interface ReceiptContextIF {
+export interface ReceiptContextIF {
     sessionReceipts: Array<string>;
     allReceipts: Array<string>;
     pendingTransactions: Array<string>;
@@ -65,9 +65,7 @@ export interface PositionUpdateIF {
     unixTimeReceipt?: number;
 }
 
-export const ReceiptContext = createContext<ReceiptContextIF>(
-    {} as ReceiptContextIF,
-);
+export const ReceiptContext = createContext({} as ReceiptContextIF);
 
 export const ReceiptContextProvider = (props: {
     children: React.ReactNode;

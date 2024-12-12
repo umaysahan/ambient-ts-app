@@ -1,8 +1,16 @@
 import React, { useContext } from 'react';
-import useCopyToClipboard from '../../../utils/hooks/useCopyToClipboard';
+import { FiCopy, FiExternalLink } from 'react-icons/fi';
+import { ZERO_ADDRESS } from '../../../ambient-utils/constants';
+import {
+    getChainExplorer,
+    trimString,
+    uriToHttp,
+} from '../../../ambient-utils/dataLayer';
 import { TokenIF } from '../../../ambient-utils/types';
 import { AppStateContext } from '../../../contexts/AppStateContext';
-import { CrocEnvContext } from '../../../contexts/CrocEnvContext';
+import useCopyToClipboard from '../../../utils/hooks/useCopyToClipboard';
+import IconWithTooltip from '../../Global/IconWithTooltip/IconWithTooltip';
+import TokenIcon from '../../Global/TokenIcon/TokenIcon';
 import {
     BoxContainer,
     BoxInfoText,
@@ -13,15 +21,6 @@ import {
     TokenName,
     TokenSymbol,
 } from './TableInfo.styles';
-import TokenIcon from '../../Global/TokenIcon/TokenIcon';
-import IconWithTooltip from '../../Global/IconWithTooltip/IconWithTooltip';
-import {
-    trimString,
-    uriToHttp,
-    getChainExplorer,
-} from '../../../ambient-utils/dataLayer';
-import { FiCopy, FiExternalLink } from 'react-icons/fi';
-import { ZERO_ADDRESS } from '../../../ambient-utils/constants';
 
 interface FeaturedBoxPropsIF {
     token: TokenIF;
@@ -35,8 +34,11 @@ interface FeaturedBoxPropsIF {
 export function FeaturedBox(props: FeaturedBoxPropsIF) {
     const { token, balance, value, pooled, style, isInit } = props;
     const {
-        chainData: { chainId, addrs },
-    } = useContext(CrocEnvContext);
+        activeNetwork: {
+            chainId,
+            chainSpec: { addrs },
+        },
+    } = useContext(AppStateContext);
     const blockExplorer = getChainExplorer(chainId);
 
     const [_, copy] = useCopyToClipboard();
@@ -117,7 +119,9 @@ export function FeaturedBox(props: FeaturedBoxPropsIF) {
                 {!isInit && (
                     <FeaturedBoxInfoContainer>
                         <InfoHeader>Value</InfoHeader>
-                        <BoxInfoText>${value}</BoxInfoText>
+                        <BoxInfoText>
+                            {`${value ? `$${value}` : '...'}`}
+                        </BoxInfoText>
                     </FeaturedBoxInfoContainer>
                 )}
             </FeaturedBoxInnerContainer>

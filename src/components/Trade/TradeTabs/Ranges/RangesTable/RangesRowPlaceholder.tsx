@@ -1,22 +1,22 @@
 import { useContext } from 'react';
-import { CrocEnvContext } from '../../../../../contexts/CrocEnvContext';
-import { TradeTableContext } from '../../../../../contexts/TradeTableContext';
-import { Chip } from '../../../../Form/Chip';
-import RangeStatus from '../../../../Global/RangeStatus/RangeStatus';
 import { FiExternalLink } from 'react-icons/fi';
 import {
-    trimString,
-    getUnicodeCharacter,
     getPinnedPriceValuesFromTicks,
+    getUnicodeCharacter,
+    trimString,
 } from '../../../../../ambient-utils/dataLayer';
+import { getPositionHash } from '../../../../../ambient-utils/dataLayer/functions/getPositionHash';
+import { AppStateContext } from '../../../../../contexts';
+import { TradeDataContext } from '../../../../../contexts/TradeDataContext';
+import { TradeTableContext } from '../../../../../contexts/TradeTableContext';
+import { UserDataContext } from '../../../../../contexts/UserDataContext';
+import { FlexContainer } from '../../../../../styled/Common';
 import {
     RangeRow,
     RowItem,
 } from '../../../../../styled/Components/TransactionTable';
-import { FlexContainer } from '../../../../../styled/Common';
-import { UserDataContext } from '../../../../../contexts/UserDataContext';
-import { TradeDataContext } from '../../../../../contexts/TradeDataContext';
-import { getPositionHash } from '../../../../../ambient-utils/dataLayer/functions/getPositionHash';
+import { Chip } from '../../../../Form/Chip';
+import RangeStatus from '../../../../Global/RangeStatus/RangeStatus';
 
 interface PropsIF {
     transaction: {
@@ -46,8 +46,8 @@ export const RangesRowPlaceholder = (props: PropsIF) => {
 
     const { showAllData } = useContext(TradeTableContext);
     const {
-        chainData: { blockExplorer },
-    } = useContext(CrocEnvContext);
+        activeNetwork: { blockExplorer },
+    } = useContext(AppStateContext);
 
     const { isDenomBase } = useContext(TradeDataContext);
 

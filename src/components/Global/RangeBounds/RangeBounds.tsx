@@ -1,11 +1,11 @@
-import { Dispatch, SetStateAction, useContext } from 'react';
-import styles from './RangeBounds.module.css';
-import RangeWidth from '../../Form/RangeWidth/RangeWidth';
-import RangePriceInfo from '../../Trade/Range/RangePriceInfo/RangePriceInfo';
-import MinMaxPrice from '../../Trade/Range/AdvancedModeComponents/MinMaxPrice/MinMaxPrice';
 import { motion } from 'framer-motion';
-import AdvancedModeToggle from '../../Trade/Range/AdvancedModeToggle/AdvancedModeToggle';
+import { Dispatch, SetStateAction, useContext } from 'react';
 import { RangeContext } from '../../../contexts/RangeContext';
+import RangeWidth from '../../Form/RangeWidth/RangeWidth';
+import MinMaxPrice from '../../Trade/Range/AdvancedModeComponents/MinMaxPrice/MinMaxPrice';
+import AdvancedModeToggle from '../../Trade/Range/AdvancedModeToggle/AdvancedModeToggle';
+import RangePriceInfo from '../../Trade/Range/RangePriceInfo/RangePriceInfo';
+import styles from './RangeBounds.module.css';
 
 interface RangeBoundsProps {
     customSwitch?: boolean;
@@ -18,7 +18,6 @@ interface RangeBoundsProps {
 
     // Props for Range Price Info
     spotPriceDisplay: string;
-    aprPercentage: number | undefined;
     poolPriceCharacter: string;
     isTokenABase: boolean;
     pinnedDisplayPrices:
@@ -62,14 +61,11 @@ export default function RangeBounds(props: RangeBoundsProps) {
         setRangeWidthPercentage,
         setRescaleRangeBoundariesWithSlider,
         inputId,
-        //
         poolPriceCharacter,
-        aprPercentage,
         pinnedDisplayPrices,
         isTokenABase,
         isAmbient,
         spotPriceDisplay,
-        //
         minPricePercentage,
         maxPricePercentage,
         setMinPriceInputString,
@@ -100,10 +96,6 @@ export default function RangeBounds(props: RangeBoundsProps) {
     const rangePriceInfoProps = {
         pinnedDisplayPrices: pinnedDisplayPrices,
         spotPriceDisplay,
-        // maxPriceDisplay: maxPriceDisplay,
-        // minPriceDisplay: minPriceDisplay,
-        aprPercentage,
-        // daysInRange: daysInRange,
         isTokenABase,
         poolPriceCharacter,
         isAmbient,

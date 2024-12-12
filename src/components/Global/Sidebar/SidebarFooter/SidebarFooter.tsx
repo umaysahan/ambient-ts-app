@@ -1,34 +1,29 @@
-import styles from './SidebarFooter.module.css';
-import { Link, useLocation } from 'react-router-dom';
+import { memo, useContext } from 'react';
+import { BsFillChatDotsFill } from 'react-icons/bs';
+import { GiTrade } from 'react-icons/gi';
 import { MdAccountBox, MdOutlineExplore } from 'react-icons/md';
 import { RiHome4Fill, RiSwapBoxFill } from 'react-icons/ri';
-import { GiTrade } from 'react-icons/gi';
-import { BsFillChatDotsFill } from 'react-icons/bs';
-import { memo, useContext } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { formSlugForPairParams } from '../../../../App/functions/urlSlugs';
 import { chainNumToString } from '../../../../ambient-utils/dataLayer';
 import { TradeDataContext } from '../../../../contexts/TradeDataContext';
-import { SidebarContext } from '../../../../contexts/SidebarContext';
+import styles from './SidebarFooter.module.css';
+// import{ SidebarContext } from '../../../../contexts/SidebarContext';
 
 function SidebarFooter() {
     const location = useLocation();
 
     const currentLocation = location.pathname;
 
-    const sidebarPositionStyle =
-        currentLocation === '/'
-            ? styles.position_sticky
-            : styles.position_sticky;
-
     const tradeDestination = location.pathname.includes('trade/market')
         ? '/trade/market/'
         : location.pathname.includes('trade/limit')
-        ? '/trade/limit/'
-        : location.pathname.includes('trade/pool')
-        ? '/trade/pool/'
-        : location.pathname.includes('trade/edit')
-        ? '/trade/edit/'
-        : '/trade/market/';
+          ? '/trade/limit/'
+          : location.pathname.includes('trade/pool')
+            ? '/trade/pool/'
+            : location.pathname.includes('trade/edit')
+              ? '/trade/edit/'
+              : '/trade/market/';
 
     const { tokenA, tokenB } = useContext(TradeDataContext);
 
@@ -38,7 +33,7 @@ function SidebarFooter() {
         tokenB: tokenB.address,
     });
 
-    const { hideOnMobile } = useContext(SidebarContext);
+    // const { hideOnMobile } = useContext(SidebarContext);
 
     const linksData = [
         {
@@ -66,8 +61,8 @@ function SidebarFooter() {
     ];
     return (
         <div
-            className={`${styles.sidebar_footer} ${sidebarPositionStyle}`}
-            style={{ paddingLeft: !hideOnMobile ? '1.5rem' : '' }}
+            className={`${styles.sidebar_footer} `}
+            // style={{ paddingLeft: !hideOnMobile ? '1.5rem' : '' }}
         >
             {linksData.map((link) =>
                 link.destination ? (

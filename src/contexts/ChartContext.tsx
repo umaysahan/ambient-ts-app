@@ -1,3 +1,4 @@
+import * as d3 from 'd3';
 import React, {
     createContext,
     Dispatch,
@@ -7,7 +8,6 @@ import React, {
     useRef,
     useState,
 } from 'react';
-import * as d3 from 'd3';
 import { useLocation } from 'react-router-dom';
 import {
     chartSettingsMethodsIF,
@@ -17,19 +17,19 @@ import { getLocalStorageItem } from '../ambient-utils/dataLayer';
 import {
     LS_KEY_CHART_ANNOTATIONS,
     LS_KEY_CHART_CONTEXT_SETTINGS,
-} from '../pages/Chart/ChartUtils/chartConstants';
-import {
-    actionKeyIF,
-    actionStackIF,
-    useUndoRedo,
-} from '../pages/Chart/ChartUtils/useUndoRedo';
-import { TradeDataContext, TradeDataContextIF } from './TradeDataContext';
+} from '../pages/platformAmbient/Chart/ChartUtils/chartConstants';
 import {
     drawDataHistory,
     getCssVariable,
     selectedDrawnData,
-} from '../pages/Chart/ChartUtils/chartUtils';
+} from '../pages/platformAmbient/Chart/ChartUtils/chartUtils';
+import {
+    actionKeyIF,
+    actionStackIF,
+    useUndoRedo,
+} from '../pages/platformAmbient/Chart/ChartUtils/useUndoRedo';
 import { BrandContext } from './BrandContext';
+import { TradeDataContext, TradeDataContextIF } from './TradeDataContext';
 
 type TradeTableState = 'Expanded' | 'Collapsed' | undefined;
 
@@ -41,7 +41,7 @@ interface ChartHeights {
     default: number;
 }
 
-interface ChartContextIF {
+export interface ChartContextIF {
     chartSettings: chartSettingsMethodsIF;
     isFullScreen: boolean;
     setIsFullScreen: (val: boolean) => void;
@@ -56,8 +56,14 @@ interface ChartContextIF {
     isChangeScaleChart: boolean;
     setIsChangeScaleChart: React.Dispatch<boolean>;
     isCandleDataNull: boolean;
-    setNumCandlesFetched: React.Dispatch<number | undefined>;
-    numCandlesFetched: number | undefined;
+    setNumCandlesFetched: React.Dispatch<{
+        candleCount: number | undefined;
+        switchPeriodFlag: boolean;
+    }>;
+    numCandlesFetched: {
+        candleCount: number | undefined;
+        switchPeriodFlag: boolean;
+    };
     setIsCandleDataNull: Dispatch<SetStateAction<boolean>>;
     isToolbarOpen: boolean;
     setIsToolbarOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -78,6 +84,7 @@ interface ChartContextIF {
         ) => void;
         undoStack: Map<actionKeyIF, actionStackIF[]>;
         deleteAllShapes: () => void;
+        currentPoolDrawnShapes: drawDataHistory[];
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     toolbarRef: React.MutableRefObject<any>;
@@ -99,13 +106,13 @@ interface ChartContextIF {
         SetStateAction<ChartThemeIF | undefined>
     >;
     chartThemeColors: ChartThemeIF | undefined;
+    setColorChangeTrigger: React.Dispatch<SetStateAction<boolean>>;
+    colorChangeTrigger: boolean;
     defaultChartSettings: LocalChartSettingsIF;
-    localChartSettings: LocalChartSettingsIF | undefined;
-    setLocalChartSettings: React.Dispatch<
-        SetStateAction<LocalChartSettingsIF | undefined>
-    >;
     setContextmenu: React.Dispatch<SetStateAction<boolean>>;
     contextmenu: boolean;
+    setShouldResetBuffer: React.Dispatch<SetStateAction<boolean>>;
+    shouldResetBuffer: boolean;
     contextMenuPlacement:
         | {
               top: number;
@@ -142,6 +149,10 @@ export interface ChartThemeIF {
     drawngShapeDefaultColor: d3.RGBColor | d3.HSLColor | null;
 
     selectedDateStrokeColor: d3.RGBColor | d3.HSLColor | null;
+    text2: d3.RGBColor | d3.HSLColor | null;
+    accent1: d3.RGBColor | d3.HSLColor | null;
+    accent3: d3.RGBColor | d3.HSLColor | null;
+    dark1: d3.RGBColor | d3.HSLColor | null;
     textColor: string;
 
     [key: string]: d3.RGBColor | d3.HSLColor | string | null;
@@ -165,21 +176,32 @@ export interface LocalChartSettingsIF {
     showFeeRate: boolean;
 }
 
-export const ChartContext = createContext<ChartContextIF>({} as ChartContextIF);
+export const ChartContext = createContext({} as ChartContextIF);
 
 export const ChartContextProvider = (props: { children: React.ReactNode }) => {
+    const { skin, platformName } = useContext(BrandContext);
+
+    const isFuta = ['futa'].includes(platformName);
+
     // 2:1 ratio of the window height subtracted by main header and token info header
+    // 1:1 ratio, if the screen is less than 1000px in height
     const CHART_MAX_HEIGHT = window.innerHeight - 160;
     const CHART_MIN_HEIGHT = 4;
-    const CHART_DEFAULT_HEIGHT = Math.floor((CHART_MAX_HEIGHT * 2) / 3);
+    const CHART_DEFAULT_HEIGHT = Math.floor(
+        (CHART_MAX_HEIGHT * 2) / (window.innerHeight > 1000 ? 3 : 4),
+    );
     let CHART_SAVED_HEIGHT = CHART_DEFAULT_HEIGHT;
 
     // Fetch alternative default height from local storage if it exists
     const CHART_SAVED_HEIGHT_LOCAL_STORAGE =
         localStorage.getItem('savedChartHeight');
 
-    if (CHART_SAVED_HEIGHT_LOCAL_STORAGE) {
+    if (CHART_SAVED_HEIGHT_LOCAL_STORAGE && !isFuta) {
         CHART_SAVED_HEIGHT = parseInt(CHART_SAVED_HEIGHT_LOCAL_STORAGE);
+    }
+
+    if (isFuta) {
+        CHART_SAVED_HEIGHT = CHART_MAX_HEIGHT + 50;
     }
 
     const CHART_CONTEXT_SETTINGS_LOCAL_STORAGE = localStorage.getItem(
@@ -221,6 +243,8 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
 
     const [contextmenu, setContextmenu] = useState(false);
 
+    const [shouldResetBuffer, setShouldResetBuffer] = useState(true);
+
     const [contextMenuPlacement, setContextMenuPlacement] = useState<{
         top: number;
         left: number;
@@ -241,11 +265,11 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
         default: CHART_DEFAULT_HEIGHT,
     });
 
-    const { skin } = useContext(BrandContext);
-
     const [chartThemeColors, setChartThemeColors] = useState<
         ChartThemeIF | undefined
     >(undefined);
+
+    const [colorChangeTrigger, setColorChangeTrigger] = useState(false);
 
     const [defaultChartSettings] = useState<LocalChartSettingsIF>({
         chartColors: {
@@ -264,23 +288,6 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
         showTvl: false,
         showFeeRate: false,
     });
-
-    const [localChartSettings, setLocalChartSettings] = useState<
-        LocalChartSettingsIF | undefined
-    >(undefined);
-
-    useEffect(() => {
-        if (
-            CHART_CONTEXT_SETTINGS_LOCAL_STORAGE &&
-            localChartSettings === undefined
-        ) {
-            const parsedContextData = JSON.parse(
-                CHART_CONTEXT_SETTINGS_LOCAL_STORAGE,
-            ) as LocalChartSettingsIF;
-
-            setLocalChartSettings(parsedContextData);
-        }
-    }, [CHART_CONTEXT_SETTINGS_LOCAL_STORAGE]);
 
     // the max size is based on the max height, and is subtracting the minimum size of table and the padding around the drag bar
     useEffect(() => {
@@ -341,9 +348,10 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
     const [isToolbarOpen, setIsToolbarOpen] =
         useState<boolean>(initialIsToolbarOpen);
 
-    const [numCandlesFetched, setNumCandlesFetched] = useState<
-        number | undefined
-    >();
+    const [numCandlesFetched, setNumCandlesFetched] = useState<{
+        candleCount: number | undefined;
+        switchPeriodFlag: boolean;
+    }>({ candleCount: undefined, switchPeriodFlag: true });
 
     const currentPoolString =
         undoRedoOptions.currentPool.tokenA.address +
@@ -389,13 +397,15 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
         setNumCandlesFetched,
         chartThemeColors,
         setChartThemeColors,
+        colorChangeTrigger,
+        setColorChangeTrigger,
         defaultChartSettings,
-        localChartSettings,
-        setLocalChartSettings,
         contextmenu,
         setContextmenu,
         contextMenuPlacement,
         setContextMenuPlacement,
+        shouldResetBuffer,
+        setShouldResetBuffer,
     };
 
     useEffect(() => {
@@ -424,7 +434,7 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
 
     useEffect(() => {
         const storedData = localStorage.getItem(LS_KEY_CHART_ANNOTATIONS);
-        if (storedData) {
+        if (storedData && !isFuta) {
             const parseStoredData = JSON.parse(storedData);
             parseStoredData.isMagnetActive = isMagnetActive.value;
             localStorage.setItem(
@@ -447,43 +457,47 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
         const upCandleBodyColor =
             contextChartColors && contextChartColors.upCandleBodyColor
                 ? d3.color(contextChartColors.upCandleBodyColor)
-                : getCssVariable(skin, '--accent5');
+                : getCssVariable(skin.active, '--accent5');
         const downCandleBodyColor =
             contextChartColors && contextChartColors.downCandleBodyColor
                 ? d3.color(contextChartColors.downCandleBodyColor)
-                : getCssVariable(skin, '--dark2');
+                : getCssVariable(skin.active, '--dark2');
         const selectedDateFillColor =
             contextChartColors && contextChartColors.selectedDateFillColor
                 ? d3.color(contextChartColors.selectedDateFillColor)
-                : getCssVariable(skin, '--accent2');
-
+                : getCssVariable(skin.active, '--accent2');
         const downCandleBorderColor =
             contextChartColors && contextChartColors.downCandleBorderColor
                 ? d3.color(contextChartColors.downCandleBorderColor)
-                : getCssVariable(skin, '--accent1');
+                : getCssVariable(skin.active, '--accent1');
         const upCandleBorderColor =
             contextChartColors && contextChartColors.upCandleBorderColor
                 ? d3.color(contextChartColors.upCandleBorderColor)
-                : getCssVariable(skin, '--accent5');
+                : getCssVariable(skin.active, '--accent5');
 
         const liqAskColor =
             contextChartColors && contextChartColors.liqAskColor
                 ? d3.color(contextChartColors.liqAskColor)
-                : getCssVariable(skin, '--accent5');
+                : getCssVariable(skin.active, '--accent5');
         const liqBidColor =
             contextChartColors && contextChartColors.liqBidColor
                 ? d3.color(contextChartColors.liqBidColor)
-                : getCssVariable(skin, '--accent1');
+                : getCssVariable(skin.active, '--accent1');
 
         const selectedDateStrokeColor =
             contextChartColors && contextChartColors.selectedDateStrokeColor
                 ? d3.color(contextChartColors.selectedDateStrokeColor)
-                : getCssVariable(skin, '--accent2');
+                : getCssVariable(skin.active, '--accent2');
 
         const drawngShapeDefaultColor =
             contextChartColors && contextChartColors.drawngShapeDefaultColor
                 ? d3.color(contextChartColors.drawngShapeDefaultColor)
-                : getCssVariable(skin, '--accent1');
+                : getCssVariable(skin.active, '--accent1');
+
+        const text2 = getCssVariable(skin.active, '--text2');
+        const accent3 = getCssVariable(skin.active, '--accent3');
+        const accent1 = getCssVariable(skin.active, '--accent1');
+        const dark1 = getCssVariable(skin.active, '--dark1');
 
         const chartThemeColors = {
             upCandleBodyColor: upCandleBodyColor,
@@ -497,11 +511,15 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
             liqAskColor: liqAskColor,
             liqBidColor: liqBidColor,
             selectedDateStrokeColor: selectedDateStrokeColor,
+            text2: text2,
+            accent1: accent1,
+            accent3: accent3,
+            dark1: dark1,
             textColor: '',
         };
 
         setChartThemeColors(() => chartThemeColors);
-    }, [skin]);
+    }, [skin.active]);
 
     return (
         <ChartContext.Provider value={chartContext}>

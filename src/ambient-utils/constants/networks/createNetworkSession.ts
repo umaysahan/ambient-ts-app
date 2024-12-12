@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { ethers, Provider } from 'ethers';
 import { CrocEnv } from '@crocswap-libs/sdk';
-import { NetworkSessionIF, TokenIF } from '../../types';
+import { ethers, Provider } from 'ethers';
 import { fetchTokenUniverse } from '../../api/fetchTokenUniverse';
+import { NetworkSessionIF, TokenIF } from '../../types';
 import { supportedNetworks } from './index';
 
 // Make a best effort, based off chain ID, to give back several useful chain objects.
@@ -48,7 +48,7 @@ export const createNetworkSession = async ({
 
     // By the end of the block, we will have all the required dependencies in a non missing state (or error trying)
     infuraUrl = await assertExists(infuraUrl, async () => network.evmRpcUrl);
-    gcUrl = await assertExists(gcUrl, async () => network.graphCacheUrl);
+    gcUrl = await assertExists(gcUrl, async () => network.GCGO_URL);
     tokenUniv = await assertExists(tokenUniv, async () =>
         fetchTokenUniverse(network.chainId),
     );

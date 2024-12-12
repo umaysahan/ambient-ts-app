@@ -64,10 +64,14 @@ const BASE_URL_PATHS = {
     tos: '/terms',
     testpage: '/testpage',
     account: '/account',
+    vaults: '/vaults',
+    accountPoints: '/account/points',
     privacy: '/privacy',
     faq: '/faq',
     faqPoints: '/faq/points',
-    fourOhFour: '/404',
+    auctions: '/auctions',
+    auctionCreate: '/create',
+    notFound: '/404',
 } as const;
 
 // string-literal union type of keys in `BASE_URL_PATHS`
@@ -114,24 +118,30 @@ export const useLinkGen = (page?: pageNames): linkGenMethodsIF => {
             pageName = 'initpool';
         } else if (pathname.startsWith(BASE_URL_PATHS.reposition)) {
             pageName = 'reposition';
-        } else if (pathname.startsWith(BASE_URL_PATHS.explore)) {
-            pageName = 'explore';
         } else if (pathname.startsWith(BASE_URL_PATHS.explorePools)) {
             pageName = 'explorePools';
         } else if (pathname.startsWith(BASE_URL_PATHS.exploreTokens)) {
             pageName = 'exploreTokens';
+        } else if (pathname.startsWith(BASE_URL_PATHS.explore)) {
+            pageName = 'explore';
         } else if (pathname.startsWith(BASE_URL_PATHS.tos)) {
             pageName = 'tos';
         } else if (pathname.startsWith(BASE_URL_PATHS.testpage)) {
             pageName = 'testpage';
         } else if (pathname.startsWith(BASE_URL_PATHS.account)) {
             pageName = 'account';
+        } else if (pathname.startsWith(BASE_URL_PATHS.vaults)) {
+            pageName = 'vaults';
         } else if (pathname.startsWith(BASE_URL_PATHS.privacy)) {
             pageName = 'privacy';
         } else if (pathname.startsWith(BASE_URL_PATHS.faqPoints)) {
             pageName = 'faqPoints';
-        } else if (pathname.startsWith(BASE_URL_PATHS.fourOhFour)) {
-            pageName = 'fourOhFour';
+        } else if (pathname.endsWith(BASE_URL_PATHS.auctionCreate)) {
+            pageName = 'auctionCreate';
+        } else if (pathname.startsWith(BASE_URL_PATHS.auctions)) {
+            pageName = 'auctions';
+        } else if (pathname.includes(BASE_URL_PATHS.notFound)) {
+            pageName = 'notFound';
         } else {
             pageName = 'home';
         }

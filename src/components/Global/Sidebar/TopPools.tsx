@@ -1,30 +1,67 @@
-import { PoolStatsFn } from '../../../ambient-utils/dataLayer';
-import { useContext } from 'react';
-import { CrocEnvContext } from '../../../contexts/CrocEnvContext';
-import { TokenPriceFn } from '../../../ambient-utils/api';
-import PoolsListItem from './PoolsListItem';
-import { useLinkGen } from '../../../utils/hooks/useLinkGen';
+import { useContext, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { PoolQueryFn } from '../../../ambient-utils/dataLayer';
+import { AppStateContext } from '../../../contexts';
+import { CrocEnvContext } from '../../../contexts/CrocEnvContext';
 import { FlexContainer } from '../../../styled/Common';
 import {
     ItemHeaderContainer,
     ItemsContainer,
     ViewMoreFlex,
 } from '../../../styled/Components/Sidebar';
+import { useLinkGen } from '../../../utils/hooks/useLinkGen';
+import PoolsListItem from './PoolsListItem';
 
 interface propsIF {
-    cachedPoolStatsFetch: PoolStatsFn;
-    cachedFetchTokenPrice: TokenPriceFn;
+    cachedQuerySpotPrice: PoolQueryFn;
 }
 
 export default function TopPools(props: propsIF) {
-    const { cachedPoolStatsFetch, cachedFetchTokenPrice } = props;
+    const { cachedQuerySpotPrice } = props;
 
-    const { topPools } = useContext(CrocEnvContext);
+    const { topPools, crocEnv } = useContext(CrocEnvContext);
+
+    const {
+        activeNetwork: { chainId },
+    } = useContext(AppStateContext);
+
     const location = useLocation();
     const onExploreRoute = location.pathname.includes('explore');
 
     const linkGenExplore = useLinkGen('explore');
+
+    const poolPriceCacheTime = Math.floor(Date.now() / 15000); // 15 second cache
+
+    const [spotPrices, setSpotPrices] = useState<(number | undefined)[]>([]);
+
+    useEffect(() => {
+        if (!crocEnv) return;
+
+        const fetchSpotPrices = async () => {
+            if (!crocEnv || (await crocEnv.context).chain.chainId !== chainId)
+                return;
+            const spotPricePromises = topPools.map((pool) =>
+                cachedQuerySpotPrice(
+                    crocEnv,
+                    pool.base.address,
+                    pool.quote.address,
+                    chainId,
+                    poolPriceCacheTime,
+                ).catch((error) => {
+                    console.error(
+                        `Failed to fetch spot price for pool ${pool.base.address}-${pool.quote.address}:`,
+                        error,
+                    );
+                    return undefined; // Handle the case where fetching spot price fails
+                }),
+            );
+
+            const results = await Promise.all(spotPricePromises);
+            results && setSpotPrices(results);
+        };
+
+        fetchSpotPrices();
+    }, [crocEnv, chainId, poolPriceCacheTime]);
 
     return (
         <FlexContainer
@@ -45,8 +82,7 @@ export default function TopPools(props: propsIF) {
                     <PoolsListItem
                         pool={pool}
                         key={idx}
-                        cachedPoolStatsFetch={cachedPoolStatsFetch}
-                        cachedFetchTokenPrice={cachedFetchTokenPrice}
+                        spotPrice={spotPrices[idx]} // Pass the corresponding spot price
                     />
                 ))}
                 {onExploreRoute ? undefined : (

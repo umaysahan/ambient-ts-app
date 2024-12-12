@@ -1,19 +1,19 @@
-import { CrocEnvContext } from '../../../../../contexts/CrocEnvContext';
-import { TradeTableContext } from '../../../../../contexts/TradeTableContext';
 import { useContext } from 'react';
 import { TransactionIF } from '../../../../../ambient-utils/types';
-import TxLI from './TxLI';
-import {
-    useLinkGen,
-    linkGenMethodsIF,
-} from '../../../../../utils/hooks/useLinkGen';
+import { AppStateContext } from '../../../../../contexts';
+import { SidebarContext } from '../../../../../contexts/SidebarContext';
+import { TradeTableContext } from '../../../../../contexts/TradeTableContext';
 import {
     FlexContainer,
     GridContainer,
     Text,
 } from '../../../../../styled/Common';
 import { ResultsContainer } from '../../../../../styled/Components/Sidebar';
-import { SidebarContext } from '../../../../../contexts/SidebarContext';
+import {
+    linkGenMethodsIF,
+    useLinkGen,
+} from '../../../../../utils/hooks/useLinkGen';
+import TxLI from './TxLI';
 
 interface propsIF {
     searchedTxs: TransactionIF[];
@@ -22,8 +22,8 @@ interface propsIF {
 export default function TxSearchResults(props: propsIF) {
     const { searchedTxs } = props;
     const {
-        chainData: { chainId },
-    } = useContext(CrocEnvContext);
+        activeNetwork: { chainId },
+    } = useContext(AppStateContext);
     const { isPoolDropdownOpen, setIsPoolDropdownOpen } =
         useContext(SidebarContext);
 

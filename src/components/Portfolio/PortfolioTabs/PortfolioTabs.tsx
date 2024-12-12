@@ -1,55 +1,45 @@
+import { useContext, useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { fetchUserRecentChanges } from '../../../ambient-utils/api';
+import { CACHE_UPDATE_FREQ_IN_MS } from '../../../ambient-utils/constants';
 import {
-    // START: Import React and Dongles
-    useEffect,
-    useState,
-    useContext,
-} from 'react';
-// START: Import JSX Functional Components
-import Wallet from '../../Global/Account/AccountTabs/Wallet/Wallet';
-import Exchange from '../../Global/Account/AccountTabs/Exchange/Exchange';
-import TabComponent from '../../Global/TabComponent/TabComponent';
-// import Tokens from '../Tokens/Tokens';
-
-// START: Import Local Files
-import {
-    getPositionData,
+    filterLimitArray,
     getLimitOrderData,
+    getPositionData,
 } from '../../../ambient-utils/dataLayer';
 import {
     LimitOrderIF,
+    LimitOrderServerIF,
     PositionIF,
+    PositionServerIF,
     TokenIF,
     TransactionIF,
-    PositionServerIF,
-    LimitOrderServerIF,
 } from '../../../ambient-utils/types';
+import medal from '../../../assets/images/icons/medal.svg';
+import exchangeImage from '../../../assets/images/sidebarImages/exchange.svg';
 import openOrdersImage from '../../../assets/images/sidebarImages/openOrders.svg';
 import rangePositionsImage from '../../../assets/images/sidebarImages/rangePositions.svg';
 import recentTransactionsImage from '../../../assets/images/sidebarImages/recentTransactions.svg';
 import walletImage from '../../../assets/images/sidebarImages/wallet.svg';
-import exchangeImage from '../../../assets/images/sidebarImages/exchange.svg';
-import { fetchUserRecentChanges } from '../../../ambient-utils/api';
-import Orders from '../../Trade/TradeTabs/Orders/Orders';
-import Ranges from '../../Trade/TradeTabs/Ranges/Ranges';
-import Transactions from '../../Trade/TradeTabs/Transactions/Transactions';
-import {
-    CACHE_UPDATE_FREQ_IN_MS,
-    GCGO_OVERRIDE_URL,
-    IS_LOCAL_ENV,
-} from '../../../ambient-utils/constants';
-import { CrocEnvContext } from '../../../contexts/CrocEnvContext';
-import { TokenContext } from '../../../contexts/TokenContext';
+import { AppStateContext } from '../../../contexts/AppStateContext';
 import { CachedDataContext } from '../../../contexts/CachedDataContext';
-import { PortfolioTabsPortfolioTabsContainer } from '../../../styled/Components/Portfolio';
-import { GraphDataContext } from '../../../contexts/GraphDataContext';
+import { CrocEnvContext } from '../../../contexts/CrocEnvContext';
 import { DataLoadingContext } from '../../../contexts/DataLoadingContext';
-import Points from '../../Global/Account/AccountTabs/Points/Points';
+import { GraphDataContext } from '../../../contexts/GraphDataContext';
+import { TokenContext } from '../../../contexts/TokenContext';
 import {
     BlastUserXpDataIF,
     UserXpDataIF,
 } from '../../../contexts/UserDataContext';
-import medal from '../../../assets/images/icons/medal.svg';
-import { AppStateContext } from '../../../contexts/AppStateContext';
+import useMediaQuery from '../../../utils/hooks/useMediaQuery';
+import Exchange from '../../Global/Account/AccountTabs/Exchange/Exchange';
+import Points from '../../Global/Account/AccountTabs/Points/Points';
+import Wallet from '../../Global/Account/AccountTabs/Wallet/Wallet';
+import TabComponent from '../../Global/TabComponent/TabComponent';
+import Orders from '../../Trade/TradeTabs/Orders/Orders';
+import Ranges from '../../Trade/TradeTabs/Ranges/Ranges';
+import Transactions from '../../Trade/TradeTabs/Transactions/Transactions';
+import styles from './PortfolioTabs.module.css';
 
 // interface for React functional component props
 interface propsIF {
@@ -82,15 +72,13 @@ export default function PortfolioTabs(props: propsIF) {
     const {
         server: { isEnabled: isServerEnabled },
         isUserIdle,
+        activeNetwork: { GCGO_URL, chainId },
     } = useContext(AppStateContext);
 
     const { setDataLoadingStatus } = useContext(DataLoadingContext);
-    const {
-        crocEnv,
-        activeNetwork,
-        provider,
-        chainData: { chainId },
-    } = useContext(CrocEnvContext);
+    const isSmallScreen = useMediaQuery('(max-width: 768px)');
+    const isLessThanDesktopSizeScreen = useMediaQuery('(max-width: 1500px)');
+    const { crocEnv, provider } = useContext(CrocEnvContext);
     const { tokens } = useContext(TokenContext);
     const { positionsByUser, limitOrdersByUser, transactionsByUser } =
         useContext(GraphDataContext);
@@ -111,14 +99,10 @@ export default function PortfolioTabs(props: propsIF) {
     const [lookupAccountTransactionData, setLookupAccountTransactionData] =
         useState<TransactionIF[]>([]);
 
-    const userPositionsCacheEndpoint = GCGO_OVERRIDE_URL
-        ? GCGO_OVERRIDE_URL + '/user_positions?'
-        : activeNetwork.graphCacheUrl + '/user_positions?';
-    const userLimitOrdersCacheEndpoint = GCGO_OVERRIDE_URL
-        ? GCGO_OVERRIDE_URL + '/user_limit_orders?'
-        : activeNetwork.graphCacheUrl + '/user_limit_orders?';
+    const userPositionsCacheEndpoint = GCGO_URL + '/user_positions?';
+    const userLimitOrdersCacheEndpoint = GCGO_URL + '/user_limit_orders?';
 
-    const getLookupUserPositions = async (accountToSearch: string) =>
+    const getLookupUserPositions = async (accountToSearch: string) => {
         fetch(
             userPositionsCacheEndpoint +
                 new URLSearchParams({
@@ -163,7 +147,9 @@ export default function PortfolioTabs(props: propsIF) {
                         });
                 }
             });
-    const getLookupUserLimitOrders = async (accountToSearch: string) =>
+    };
+
+    const getLookupUserLimitOrders = async (accountToSearch: string) => {
         fetch(
             userLimitOrdersCacheEndpoint +
                 new URLSearchParams({
@@ -173,8 +159,6 @@ export default function PortfolioTabs(props: propsIF) {
         )
             .then((response) => response?.json())
             .then((json) => {
-                // temporarily skip ENS fetch
-                const skipENSFetch = true;
                 const userLimitOrderStates = json?.data;
                 if (userLimitOrderStates && crocEnv && provider) {
                     Promise.all(
@@ -190,15 +174,15 @@ export default function PortfolioTabs(props: propsIF) {
                                     cachedQuerySpotPrice,
                                     cachedTokenDetails,
                                     cachedEnsResolve,
-                                    skipENSFetch,
                                 );
                             },
                         ),
                     )
                         .then((updatedLimitOrderStates) => {
-                            setLookupAccountLimitOrderData(
+                            const filteredData = filterLimitArray(
                                 updatedLimitOrderStates,
                             );
+                            setLookupAccountLimitOrderData(filteredData);
                         })
                         .finally(() => {
                             setDataLoadingStatus({
@@ -208,15 +192,17 @@ export default function PortfolioTabs(props: propsIF) {
                         });
                 }
             });
+    };
+
     const getLookupUserTransactions = async (accountToSearch: string) => {
         if (crocEnv && provider) {
             fetchUserRecentChanges({
                 tokenList: tokens.tokenUniv,
                 user: accountToSearch,
                 chainId: chainId,
-                n: 200, // fetch last 200 changes,
+                n: 100, // fetch last 100 changes,
                 crocEnv: crocEnv,
-                graphCacheUrl: activeNetwork.graphCacheUrl,
+                GCGO_URL: GCGO_URL,
                 provider,
                 cachedFetchTokenPrice: cachedFetchTokenPrice,
                 cachedQuerySpotPrice: cachedQuerySpotPrice,
@@ -240,17 +226,25 @@ export default function PortfolioTabs(props: propsIF) {
     useEffect(() => {
         (async () => {
             if (
-                isServerEnabled &&
                 !connectedAccountActive &&
-                !!tokens.tokenUniv &&
                 resolvedAddress &&
-                !!crocEnv
+                isServerEnabled &&
+                crocEnv &&
+                (await crocEnv.context).chain.chainId === chainId &&
+                !!tokens.tokenUniv
             ) {
-                IS_LOCAL_ENV &&
-                    console.debug(
-                        'querying user tx/order/positions because address changed',
-                    );
-
+                setDataLoadingStatus({
+                    datasetName: 'isLookupUserRangeDataLoading',
+                    loadingStatus: true,
+                });
+                setDataLoadingStatus({
+                    datasetName: 'isLookupUserOrderDataLoading',
+                    loadingStatus: true,
+                });
+                setDataLoadingStatus({
+                    datasetName: 'isLookupUserTxDataLoading',
+                    loadingStatus: true,
+                });
                 await Promise.all([
                     getLookupUserTransactions(resolvedAddress),
                     getLookupUserLimitOrders(resolvedAddress),
@@ -261,39 +255,77 @@ export default function PortfolioTabs(props: propsIF) {
     }, [
         resolvedAddress,
         connectedAccountActive,
-        isUserIdle
-            ? Math.floor(Date.now() / (2 * CACHE_UPDATE_FREQ_IN_MS))
-            : Math.floor(Date.now() / CACHE_UPDATE_FREQ_IN_MS),
         !!tokens.tokenUniv,
-        !!crocEnv,
-        !!provider,
-
+        crocEnv,
+        chainId,
+        provider,
         isServerEnabled,
     ]);
 
-    const activeAccountPositionData = connectedAccountActive
-        ? _positionsByUser
-        : lookupAccountPositionData;
-    // eslint-disable-next-line
-    const activeAccountLimitOrderData = connectedAccountActive
-        ? _limitsByUser
-        : lookupAccountLimitOrderData;
+    // update without loading indicator on an interval
+    useEffect(() => {
+        (async () => {
+            if (
+                !connectedAccountActive &&
+                resolvedAddress &&
+                isServerEnabled &&
+                crocEnv &&
+                (await crocEnv.context).chain.chainId === chainId &&
+                !!tokens.tokenUniv
+            ) {
+                await Promise.all([
+                    getLookupUserTransactions(resolvedAddress),
+                    getLookupUserLimitOrders(resolvedAddress),
+                    getLookupUserPositions(resolvedAddress),
+                ]);
+            }
+        })();
+    }, [
+        isUserIdle
+            ? Math.floor(Date.now() / (2 * CACHE_UPDATE_FREQ_IN_MS))
+            : Math.floor(Date.now() / CACHE_UPDATE_FREQ_IN_MS),
+    ]);
 
-    const activeAccountTransactionData = connectedAccountActive
-        ? _txsByUser?.filter((tx) => {
-              if (tx.changeType !== 'fill' && tx.changeType !== 'cross') {
-                  return true;
-              } else {
-                  return false;
-              }
-          })
-        : lookupAccountTransactionData?.filter((tx) => {
-              if (tx.changeType !== 'fill' && tx.changeType !== 'cross') {
-                  return true;
-              } else {
-                  return false;
-              }
-          });
+    const activeAccountPositionData = useMemo(
+        () =>
+            connectedAccountActive
+                ? _positionsByUser
+                : lookupAccountPositionData,
+        [connectedAccountActive, _positionsByUser, lookupAccountPositionData],
+    );
+    const activeAccountLimitOrderData = useMemo(
+        () =>
+            connectedAccountActive
+                ? _limitsByUser
+                : lookupAccountLimitOrderData,
+        [connectedAccountActive, _limitsByUser, lookupAccountLimitOrderData],
+    );
+
+    const activeAccountTransactionData = useMemo(
+        () =>
+            connectedAccountActive
+                ? _txsByUser?.filter((tx) => {
+                      if (
+                          tx.changeType !== 'fill' &&
+                          tx.changeType !== 'cross'
+                      ) {
+                          return true;
+                      } else {
+                          return false;
+                      }
+                  })
+                : lookupAccountTransactionData?.filter((tx) => {
+                      if (
+                          tx.changeType !== 'fill' &&
+                          tx.changeType !== 'cross'
+                      ) {
+                          return true;
+                      } else {
+                          return false;
+                      }
+                  }),
+        [connectedAccountActive, _txsByUser, lookupAccountTransactionData],
+    );
 
     // props for <Wallet/> React Element
     const walletProps = {
@@ -334,6 +366,7 @@ export default function PortfolioTabs(props: propsIF) {
         changesInSelectedCandle: undefined,
         isAccountView: true,
         fullLayoutActive: fullLayoutActive,
+        accountAddress: resolvedAddress,
     };
 
     // Props for <Orders/> React Element
@@ -365,7 +398,9 @@ export default function PortfolioTabs(props: propsIF) {
             icon: medal,
         },
         {
-            label: 'Exchange Balances',
+            label: isLessThanDesktopSizeScreen
+                ? 'DEX Balances'
+                : 'Exchange Balances',
             content: <Exchange {...exchangeProps} />,
             icon: exchangeImage,
         },
@@ -409,17 +444,71 @@ export default function PortfolioTabs(props: propsIF) {
         },
     ];
 
+    const dataToUse = connectedAccountActive
+        ? accountTabDataWithTokens
+        : accountTabDataWithoutTokens;
+
+    const location = useLocation();
+
+    // active tab rendered in DOM
+    const DEFAULT_TAB = 'Transactions';
+    const [activeTab, setActiveTab] = useState<string>(DEFAULT_TAB);
+
+    // allow the user to reach the Points tab through URL navigation
+    useEffect(() => {
+        if (location.pathname.includes('points')) {
+            setActiveTab('Points');
+        }
+    }, [location.pathname]);
+
+    // TODO:    this file is changing state without changing URL, we should
+    // TODO:    ... refactor to trigger a nav action and update state responsively
+
+    const renderTabContent = (): JSX.Element | null => {
+        const selectedTabData = dataToUse.find(
+            (tab) => tab.label === activeTab,
+        );
+        return selectedTabData ? selectedTabData.content : null;
+    };
+
+    const mobileTabs: JSX.Element = (
+        <div className={styles.mobile_tabs_container}>
+            <div className={styles.mobile_tabs_button_container}>
+                {dataToUse
+                    .filter((t) => t.label !== 'Points')
+                    .map((tab) => (
+                        <button
+                            key={tab.label}
+                            onClick={() => setActiveTab(tab.label)}
+                            style={{
+                                color:
+                                    tab.label === activeTab
+                                        ? 'var(--accent1)'
+                                        : 'var(--text2)',
+                                borderBottom:
+                                    tab.label === activeTab
+                                        ? '1px solid var(--accent1)'
+                                        : '1px solid transparent',
+                            }}
+                        >
+                            <span className={styles.tabLabel}>{tab.label}</span>
+                        </button>
+                    ))}
+            </div>
+            <div className={styles.tabContent} style={{ height: '100%' }}>
+                {renderTabContent()}
+            </div>
+        </div>
+    );
+
+    if (isSmallScreen) return mobileTabs;
     return (
-        <PortfolioTabsPortfolioTabsContainer>
+        <div className={styles.portfolio_tabs_container}>
             <TabComponent
-                data={
-                    connectedAccountActive
-                        ? accountTabDataWithTokens
-                        : accountTabDataWithoutTokens
-                }
+                data={dataToUse}
                 rightTabOptions={false}
                 isPortfolio={true}
             />
-        </PortfolioTabsPortfolioTabsContainer>
+        </div>
     );
 }

@@ -1,33 +1,32 @@
 import {
-    useEffect,
     Dispatch,
-    SetStateAction,
-    useRef,
-    useContext,
     memo,
+    SetStateAction,
+    useContext,
+    useEffect,
+    useRef,
 } from 'react';
 
-import Transactions from './Transactions/Transactions';
-import Orders from './Orders/Orders';
 import moment from 'moment';
-import leaderboard from '../../../assets/images/leaderboard.svg';
+import { CandleDataIF } from '../../../ambient-utils/types';
 import infoSvg from '../../../assets/images/info.svg';
 import openOrdersImage from '../../../assets/images/sidebarImages/openOrders.svg';
 import rangePositionsImage from '../../../assets/images/sidebarImages/rangePositions.svg';
 import recentTransactionsImage from '../../../assets/images/sidebarImages/recentTx.svg';
-import Ranges from './Ranges/Ranges';
-import TabComponent from '../../Global/TabComponent/TabComponent';
-import PositionsOnlyToggle from './PositionsOnlyToggle/PositionsOnlyToggle';
-import Leaderboard from './Ranges/Leaderboard';
-import { DefaultTooltip } from '../../Global/StyledTooltip/StyledTooltip';
 import { CandleContext } from '../../../contexts/CandleContext';
 import { ChartContext } from '../../../contexts/ChartContext';
-import { CandleDataIF } from '../../../ambient-utils/types';
+import { TradeDataContext } from '../../../contexts/TradeDataContext';
+import { UserDataContext } from '../../../contexts/UserDataContext';
 import { FlexContainer } from '../../../styled/Common';
 import { ClearButton } from '../../../styled/Components/TransactionTable';
+import useMediaQuery from '../../../utils/hooks/useMediaQuery';
+import { DefaultTooltip } from '../../Global/StyledTooltip/StyledTooltip';
+import TabComponent from '../../Global/TabComponent/TabComponent';
 import TableInfo from '../TableInfo/TableInfo';
-import { UserDataContext } from '../../../contexts/UserDataContext';
-import { TradeDataContext } from '../../../contexts/TradeDataContext';
+import Orders from './Orders/Orders';
+import PositionsOnlyToggle from './PositionsOnlyToggle/PositionsOnlyToggle';
+import Ranges from './Ranges/Ranges';
+import Transactions from './Transactions/Transactions';
 interface propsIF {
     filter: CandleDataIF | undefined;
     setTransactionFilter: Dispatch<SetStateAction<CandleDataIF | undefined>>;
@@ -61,6 +60,11 @@ function TradeTabs2(props: propsIF) {
     const { baseToken, quoteToken } = useContext(TradeDataContext);
 
     const { isUserConnected, userAddress } = useContext(UserDataContext);
+
+    const smallScreen = useMediaQuery('(max-width: 768px)');
+    const isTabletScreen = useMediaQuery(
+        '(min-width: 768px) and (max-width: 1200px)',
+    );
 
     const selectedBaseAddress = baseToken.address;
     const selectedQuoteAddress = quoteToken.address;
@@ -132,17 +136,70 @@ function TradeTabs2(props: propsIF) {
                   showRightSideOption: true,
               },
               {
-                  label: 'Leaderboard',
-                  content: <Leaderboard />,
-                  icon: leaderboard,
-                  showRightSideOption: false,
-              },
-              {
                   label: 'Info',
                   content: <TableInfo />,
                   icon: infoSvg,
                   showRightSideOption: false,
                   //   onClick: handleChartHeightOnInfo,
+              },
+          ];
+    const tradeTabDataMobile = isCandleSelected
+        ? [
+              {
+                  label: 'Transactions',
+                  content: <Transactions {...transactionsProps} />,
+                  icon: recentTransactionsImage,
+                  showRightSideOption: true,
+              },
+          ]
+        : [
+              {
+                  label: 'Transactions',
+                  content: <Transactions {...transactionsProps} />,
+                  icon: recentTransactionsImage,
+                  showRightSideOption: false,
+              },
+              {
+                  label: 'Limits',
+                  content: <Orders {...ordersProps} />,
+                  icon: openOrdersImage,
+                  showRightSideOption: false,
+              },
+              {
+                  label: 'Liquidity',
+                  content: <Ranges {...rangesProps} />,
+                  icon: rangePositionsImage,
+                  showRightSideOption: false,
+              },
+          ];
+
+    const tradeTabDataTablet = isCandleSelected
+        ? [
+              {
+                  label: 'Transactions',
+                  content: <Transactions {...transactionsProps} />,
+                  icon: recentTransactionsImage,
+                  showRightSideOption: true,
+              },
+          ]
+        : [
+              {
+                  label: 'Transactions',
+                  content: <Transactions {...transactionsProps} />,
+                  icon: recentTransactionsImage,
+                  showRightSideOption: false,
+              },
+              {
+                  label: 'Limits',
+                  content: <Orders {...ordersProps} />,
+                  icon: openOrdersImage,
+                  showRightSideOption: false,
+              },
+              {
+                  label: 'Liquidity',
+                  content: <Ranges {...rangesProps} />,
+                  icon: rangePositionsImage,
+                  showRightSideOption: false,
               },
           ];
 
@@ -219,7 +276,7 @@ function TradeTabs2(props: propsIF) {
             fullWidth
             fullHeight
             padding='8px'
-            style={{ position: 'relative', zIndex: 21 }}
+            style={{ position: 'relative', zIndex: 1 }}
         >
             <FlexContainer
                 flexDirection='column'
@@ -231,13 +288,24 @@ function TradeTabs2(props: propsIF) {
                         tradeTableState !== 'Expanded'
                             ? 'var(--border-radius)'
                             : '',
+                    border: smallScreen ? '1px solid var(--dark3)' : '',
                 }}
             >
                 {isCandleSelected ? selectedMessageContent : null}
                 <TabComponent
-                    data={tradeTabData}
+                    data={
+                        smallScreen
+                            ? tradeTabDataMobile
+                            : isTabletScreen
+                              ? tradeTabDataTablet
+                              : tradeTabData
+                    }
                     rightTabOptions={
-                        <PositionsOnlyToggle {...positionsOnlyToggleProps} />
+                        !smallScreen && (
+                            <PositionsOnlyToggle
+                                {...positionsOnlyToggleProps}
+                            />
+                        )
                     }
                 />
             </FlexContainer>

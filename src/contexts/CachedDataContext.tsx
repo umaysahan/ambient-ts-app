@@ -1,38 +1,55 @@
 import React, { createContext } from 'react';
 import {
+    AmbientListBalancesQueryFn,
+    DexBalancesQueryFn,
     FetchAddrFn,
+    FetchBlockTimeFn,
+    FetchContractDetailsFn,
+    FetchTopPairedTokenFn,
+    TokenPriceFn,
+    memoizeFetchAmbientListWalletBalances,
+    memoizeFetchBlockTime,
+    memoizeFetchContractDetails,
+    memoizeFetchDexBalances,
     memoizeFetchEnsAddress,
     memoizeFetchTopPairedToken,
-    FetchTopPairedTokenFn,
-    FetchContractDetailsFn,
-    memoizeFetchContractDetails,
-    TokenBalancesQueryFn,
-    memoizeFetchTokenBalances,
-    TokenPriceFn,
     memoizeTokenPrice,
-    FetchBlockTimeFn,
-    memoizeFetchBlockTime,
 } from '../ambient-utils/api';
 
-import {
-    PoolStatsFn,
-    memoizePoolStats,
-    SpotPriceFn,
-    memoizeQuerySpotPrice,
-    memoizeGet24hChange,
-    Change24Fn,
-    memoizeGetLiquidityFee,
-    LiquidityFeeFn,
-} from '../ambient-utils/dataLayer';
 import { NFTQueryFn, memoizeFetchNFT } from '../ambient-utils/api/fetchNft';
+import {
+    AllPoolStatsFn,
+    AuctionStatusQueryFn,
+    Change24Fn,
+    GlobalAuctionListQueryFn,
+    LiquidityFeeFn,
+    PoolStatsFn,
+    SpotPriceFn,
+    UserAuctionListQueryFn,
+    memoizeAllPoolStats,
+    memoizeGet24hChange,
+    memoizeGetAuctionStatus,
+    memoizeGetGlobalAuctionsList,
+    memoizeGetLiquidityFee,
+    memoizeGetUserAuctionsList,
+    memoizePoolStats,
+    memoizeQuerySpotPrice,
+    memoizeQuerySpotTick,
+} from '../ambient-utils/dataLayer';
 
-interface CachedDataIF {
-    cachedFetchTokenBalances: TokenBalancesQueryFn;
+export interface CachedDataContextIF {
+    cachedFetchAmbientListWalletBalances: AmbientListBalancesQueryFn;
+    cachedFetchDexBalances: DexBalancesQueryFn;
     cachedFetchTokenPrice: TokenPriceFn;
     cachedPoolStatsFetch: PoolStatsFn;
+    cachedAllPoolStatsFetch: AllPoolStatsFn;
     cachedGet24hChange: Change24Fn;
     cachedGetLiquidityFee: LiquidityFeeFn;
+    cachedGetGlobalAuctionsList: GlobalAuctionListQueryFn;
+    cachedGetAuctionStatus: AuctionStatusQueryFn;
+    cachedGetUserAuctionsList: UserAuctionListQueryFn;
     cachedQuerySpotPrice: SpotPriceFn;
+    cachedQuerySpotTick: SpotPriceFn;
     cachedTokenDetails: FetchContractDetailsFn;
     cachedEnsResolve: FetchAddrFn;
     cachedFetchTopPairedToken: FetchTopPairedTokenFn;
@@ -40,21 +57,26 @@ interface CachedDataIF {
     cachedFetchNFT: NFTQueryFn;
 }
 
-export const CachedDataContext = createContext<CachedDataIF>(
-    {} as CachedDataIF,
-);
+export const CachedDataContext = createContext({} as CachedDataContextIF);
 
 // TODO: refactor to cache in context and use other contexts as dependencies
 export const CachedDataContextProvider = (props: {
     children: React.ReactNode;
 }) => {
-    const cachedDataState: CachedDataIF = {
-        cachedFetchTokenBalances: memoizeFetchTokenBalances(),
+    const cachedDataState: CachedDataContextIF = {
+        cachedFetchAmbientListWalletBalances:
+            memoizeFetchAmbientListWalletBalances(),
+        cachedFetchDexBalances: memoizeFetchDexBalances(),
         cachedFetchTokenPrice: memoizeTokenPrice(),
         cachedPoolStatsFetch: memoizePoolStats(),
+        cachedAllPoolStatsFetch: memoizeAllPoolStats(),
         cachedGet24hChange: memoizeGet24hChange(),
         cachedGetLiquidityFee: memoizeGetLiquidityFee(),
+        cachedGetGlobalAuctionsList: memoizeGetGlobalAuctionsList(),
+        cachedGetAuctionStatus: memoizeGetAuctionStatus(),
+        cachedGetUserAuctionsList: memoizeGetUserAuctionsList(),
         cachedQuerySpotPrice: memoizeQuerySpotPrice(),
+        cachedQuerySpotTick: memoizeQuerySpotTick(),
         cachedTokenDetails: memoizeFetchContractDetails(),
         cachedEnsResolve: memoizeFetchEnsAddress(),
         cachedFetchTopPairedToken: memoizeFetchTopPairedToken(),

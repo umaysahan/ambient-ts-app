@@ -1,14 +1,14 @@
-// import { useEffect, useMemo, useState } from 'react';
-// import { chainIds } from '../../ambient-utils/types';
-// import { chainColorScheme } from '../../assets/branding/types';
-// import { IS_LOCAL_ENV } from '../../ambient-utils/constants';
+// import{ useEffect, useMemo, useState } from 'react';
+// import{ chainHexIds } from '../../ambient-utils/types';
+// import{ chainColorScheme } from '../../assets/branding/types';
+// import{ IS_LOCAL_ENV } from '../../ambient-utils/constants';
 
 // !important:  please do not delete anything in this file, I've disabled
 // !important:  ... it temporarily until I have time to track preferences
 // !important:  ... across multiple deployments to the same URL as local
 // !important:  ... storage is specific to a single URL domain
 
-export type skins = 'purple_dark' | 'purple_light' | 'orange_dark';
+export type skins = 'purple_dark' | 'purple_light' | 'futa_dark';
 
 // export interface skinMethodsIF {
 //     active: skins;
@@ -17,7 +17,7 @@ export type skins = 'purple_dark' | 'purple_light' | 'orange_dark';
 
 // export const useSkin = (
 //     colorDefaults: chainColorScheme,
-//     chainId: chainIds,
+//     chainId: chainHexIds,
 // ): skinMethodsIF => {
 //     const LS_KEY = 'skin';
 
@@ -51,7 +51,7 @@ export type skins = 'purple_dark' | 'purple_light' | 'orange_dark';
 //     }
 
 //     // // fn to check for a color preference persisted in local storage
-//     // function getColorScheme(chn: chainIds): skins | undefined {
+//     // function getColorScheme(chn: chainHexIds): skins | undefined {
 //     //     const persisted: Partial<chainColorScheme> | undefined = getFromLS();
 //     //     if (persisted && persisted[chn]) {
 //     //         return persisted[chn];

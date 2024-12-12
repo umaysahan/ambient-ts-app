@@ -1,22 +1,22 @@
 import styled, { css } from 'styled-components/macro';
 
+import { AnimationProps, Animations } from './Animations';
+import { Breakpoint, BreakpointProps } from './Breakpoints';
 import {
+    AlignItems,
+    BoxShadows,
+    Displays,
     FontSizes,
     FontWeights,
     Fonts,
-    backgrounds,
-    textColors,
-    overflowTypes,
     JustifyContent,
-    AlignItems,
     Position,
-    scrollSnapAlign,
     TextAlign,
-    Displays,
-    BoxShadows,
+    backgrounds,
+    overflowTypes,
+    scrollSnapAlign,
+    textColors,
 } from './Types';
-import { Breakpoint, BreakpointProps } from './Breakpoints';
-import { AnimationProps, Animations } from './Animations';
 
 export const hideScrollbarCss = css`
     &::-webkit-scrollbar {
@@ -139,15 +139,15 @@ export const ContainerStyles = (props: ContainerProps) => {
                 customCols
                     ? customCols
                     : numCols
-                    ? `repeat(${numCols}, 1fr)`
-                    : 'auto'
+                      ? `repeat(${numCols}, 1fr)`
+                      : 'auto'
             };
             grid-template-rows: ${
                 customRows
                     ? customRows
                     : numRows
-                    ? `repeat(${numRows}, 1fr)`
-                    : 'auto'
+                      ? `repeat(${numRows}, 1fr)`
+                      : 'auto'
             };   
             
             ${gap ? `gap: ${gap};` : 'gap: 4px;'}

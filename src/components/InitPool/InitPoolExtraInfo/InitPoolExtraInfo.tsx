@@ -1,14 +1,10 @@
-// START: Import React and Dongles
 import { Dispatch, SetStateAction, useContext, useState } from 'react';
-// import { FaGasPump } from 'react-icons/fa';
-// import { RiArrowDownSLine } from 'react-icons/ri';
 
-// START: Import Local Files
-import styles from './InitPoolExtraInfo.module.css';
-import TooltipComponent from '../../Global/TooltipComponent/TooltipComponent';
-import { TokenIF } from '../../../ambient-utils/types';
 import { getFormattedNumber } from '../../../ambient-utils/dataLayer';
-import { CrocEnvContext } from '../../../contexts/CrocEnvContext';
+import { TokenIF } from '../../../ambient-utils/types';
+import { AppStateContext } from '../../../contexts';
+import TooltipComponent from '../../Global/TooltipComponent/TooltipComponent';
+import styles from './InitPoolExtraInfo.module.css';
 
 interface InitPriceExtraInfoProps {
     initGasPriceinDollars: string | undefined;
@@ -31,8 +27,8 @@ export default function InitPoolExtraInfo(props: InitPriceExtraInfoProps) {
     } = props;
 
     const {
-        chainData: { chainId },
-    } = useContext(CrocEnvContext);
+        activeNetwork: { chainId },
+    } = useContext(AppStateContext);
 
     const [showExtraDetails] = useState<boolean>(true);
     // const [showExtraDetails, setShowExtraDetails] = useState<boolean>(true);

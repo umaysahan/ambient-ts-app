@@ -1,10 +1,10 @@
-import { useMediaQuery } from '@material-ui/core';
+import { TransactionReceipt } from 'ethers';
 import {
     ReactNode,
     createContext,
+    useContext,
     useEffect,
     useMemo,
-    useContext,
     useState,
 } from 'react';
 import {
@@ -14,12 +14,11 @@ import {
 import { sidebarMethodsIF, useSidebar } from '../App/hooks/useSidebar';
 import { IS_LOCAL_ENV } from '../ambient-utils/constants';
 import { diffHashSig, isJsonString } from '../ambient-utils/dataLayer';
+import useMediaQuery from '../utils/hooks/useMediaQuery';
 import { AppStateContext } from './AppStateContext';
-import { CrocEnvContext } from './CrocEnvContext';
 import { ReceiptContext } from './ReceiptContext';
-import { TransactionReceipt } from 'ethers';
 
-interface SidebarStateIF {
+export interface SidebarContextIF {
     recentPools: recentPoolsMethodsIF;
     sidebar: sidebarMethodsIF;
     hideOnMobile: boolean;
@@ -28,18 +27,14 @@ interface SidebarStateIF {
     isPoolDropdownOpen: boolean;
 }
 
-export const SidebarContext = createContext<SidebarStateIF>(
-    {} as SidebarStateIF,
-);
+export const SidebarContext = createContext({} as SidebarContextIF);
 
 export const SidebarContextProvider = (props: { children: ReactNode }) => {
     // logic to open a snackbar notification
     const {
+        activeNetwork: { chainId },
         snackbar: { open: openSnackbar },
     } = useContext(AppStateContext);
-
-    // data on the active chain in the app
-    const { chainData } = useContext(CrocEnvContext);
 
     // all receipts stored in the current user session (array of stringified JSONs)
     const { allReceipts } = useContext(ReceiptContext);
@@ -67,7 +62,7 @@ export const SidebarContextProvider = (props: { children: ReactNode }) => {
     const sidebar = useSidebar(location.pathname, showSidebarByDefault);
 
     // hook to manage recent pool data in-session
-    const recentPools: recentPoolsMethodsIF = useRecentPools(chainData.chainId);
+    const recentPools: recentPoolsMethodsIF = useRecentPools(chainId);
 
     // value showing whether the screen size warrants hiding the sidebar
     const [hideOnMobile, setHideOnMobile] = useState<boolean>(true);

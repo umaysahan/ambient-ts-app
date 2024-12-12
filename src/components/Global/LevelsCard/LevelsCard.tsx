@@ -1,16 +1,15 @@
-import { FlexContainer, Text } from '../../../styled/Common';
-import styles from './LevelsCard.module.css';
-import { LuCopy, LuExternalLink } from 'react-icons/lu';
-import LevelLine from '../LevelLine/LevelLine';
 import { useContext, useRef, useState } from 'react';
-import { UserDataContext } from '../../../contexts/UserDataContext';
-import { printDomToImage, trimString } from '../../../ambient-utils/dataLayer';
-import useCopyToClipboard from '../../../utils/hooks/useCopyToClipboard';
-import { AppStateContext } from '../../../contexts/AppStateContext';
-import { CrocEnvContext } from '../../../contexts/CrocEnvContext';
-import { Link } from 'react-router-dom';
-import useMediaQuery from '../../../utils/hooks/useMediaQuery';
+import { LuCopy, LuExternalLink } from 'react-icons/lu';
 import { RiScreenshot2Fill } from 'react-icons/ri';
+import { Link } from 'react-router-dom';
+import { printDomToImage, trimString } from '../../../ambient-utils/dataLayer';
+import { AppStateContext } from '../../../contexts/AppStateContext';
+import { UserDataContext } from '../../../contexts/UserDataContext';
+import { FlexContainer, Text } from '../../../styled/Common';
+import useCopyToClipboard from '../../../utils/hooks/useCopyToClipboard';
+import useMediaQuery from '../../../utils/hooks/useMediaQuery';
+import LevelLine from '../LevelLine/LevelLine';
+import styles from './LevelsCard.module.css';
 import PointsHistoryDisplay from './PointsHistoryDisplay/PointsHistoryDisplay';
 
 interface LevelsCardPropsIF {
@@ -50,11 +49,9 @@ export default function LevelsCard(props: LevelsCardPropsIF) {
     const { userAddress } = useContext(UserDataContext);
     const [_, copy] = useCopyToClipboard();
     const {
+        activeNetwork: { blockExplorer },
         snackbar: { open: openSnackbar },
     } = useContext(AppStateContext);
-    const {
-        chainData: { blockExplorer },
-    } = useContext(CrocEnvContext);
 
     function handleOpenExplorer(address: string) {
         if (address && blockExplorer) {
@@ -63,7 +60,7 @@ export default function LevelsCard(props: LevelsCardPropsIF) {
         }
     }
     function handleCopyAddress() {
-        copy(resolvedAddress ? resolvedAddress : userAddress ?? '');
+        copy(resolvedAddress ? resolvedAddress : (userAddress ?? ''));
         const copiedData = resolvedAddress ? resolvedAddress : userAddress;
 
         openSnackbar(`${copiedData} copied`, 'info');

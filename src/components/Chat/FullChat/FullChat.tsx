@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMediaQuery } from '@material-ui/core';
-import Picker, { IEmojiData } from 'emoji-picker-react';
+import { EmojiClickData } from 'emoji-picker-react';
 import {
     Dispatch,
     SetStateAction,
@@ -32,12 +32,11 @@ import { CrocEnvContext } from '../../../contexts/CrocEnvContext';
 import { UserPreferenceContext } from '../../../contexts/UserPreferenceContext';
 import ChatConfirmationPanel from '../ChatConfirmationPanel/ChatConfirmationPanel';
 import { ChatGoToChatParamsIF } from '../ChatIFs';
+import ChatNotificationBubble from '../ChatNotification/ChatNotificationBubble';
 import ChatToaster from '../ChatToaster/ChatToaster';
 import Room from '../MessagePanel/Room/Room';
-import styles from './FullChat.module.css';
-import ChatNotificationBubble from '../ChatNotification/ChatNotificationBubble';
 import { Message } from '../Model/MessageModel';
-import { IoIosClose } from 'react-icons/io';
+import styles from './FullChat.module.css';
 
 interface FullChatPropsIF {
     messageList: JSX.Element;
@@ -74,10 +73,7 @@ interface FullChatPropsIF {
     verifyOldMessagesStartDate: Date;
     setShowVerifyOldMessagesPanel: Dispatch<SetStateAction<boolean>>;
     showPicker: boolean;
-    addReactionEmojiPickListener: (
-        event: React.MouseEvent,
-        data: IEmojiData,
-    ) => void;
+    addReactionEmojiPickListener: (data: EmojiClickData) => void;
     setShowPicker: Dispatch<SetStateAction<boolean>>;
     showDeleteConfirmation: boolean;
     handleConfirmDelete: () => void;
@@ -103,10 +99,7 @@ interface FullChatPropsIF {
     setMessageForNotificationBubble: Dispatch<
         SetStateAction<Message | undefined>
     >;
-    showPopUp: boolean;
-    setShowPopUp: React.Dispatch<React.SetStateAction<boolean>>;
-    popUpText: string;
-    setPopUpText: React.Dispatch<React.SetStateAction<string>>;
+    reactionPicker: JSX.Element;
 }
 
 interface ChannelDisplayPropsIF {
@@ -122,7 +115,7 @@ function FullChat(props: FullChatPropsIF) {
     const { favePools } = useContext(UserPreferenceContext);
     const reconstructedReadableRoom =
         params && !params.includes('global')
-            ? params.replace('&', ' / ').toUpperCase()
+            ? params.replace(/&/g, ' / ').toUpperCase()
             : params && params.includes('global')
               ? 'Global'
               : 'Global';
@@ -251,25 +244,6 @@ function FullChat(props: FullChatPropsIF) {
         reSwappedReconstructedReadableRoom,
         rooms.length === 0,
     ]);
-
-    function closePopUp() {
-        props.setShowPopUp(false);
-    }
-
-    const sendingLink = (
-        <div className={styles.pop_up}>
-            <p>{props.popUpText}</p>
-            <div className={styles.close_button}>
-                <IoIosClose
-                    onClick={() => closePopUp()}
-                    size={20}
-                    role='button'
-                    tabIndex={0}
-                    aria-label='Close information box.'
-                />
-            </div>
-        </div>
-    );
 
     // eslint-disable-next-line
     function handleRoomClick(event: any, pool: PoolIF, isDropdown: boolean) {
@@ -774,7 +748,6 @@ function FullChat(props: FullChatPropsIF) {
 
             {messageInput}
             {props.rndMentSkipper && props.rndMentSkipper()}
-            {props.showPopUp ? sendingLink : ''}
             <div id='thelastmessage' />
         </div>
     );
@@ -936,28 +909,7 @@ function FullChat(props: FullChatPropsIF) {
                 }}
             />
             {props.rndShowPreviousMessages()}
-            {props.isChatOpen && props.showPicker && (
-                <div
-                    id='chatReactionWrapper'
-                    className={styles.reaction_picker_wrapper}
-                >
-                    <div
-                        className={styles.reaction_picker_close}
-                        onClick={() => {
-                            props.setShowPicker(false);
-                        }}
-                    >
-                        {' '}
-                        X{' '}
-                    </div>
-
-                    <Picker
-                        onEmojiClick={props.addReactionEmojiPickListener}
-                        pickerStyle={{ width: '100%' }}
-                        disableSkinTonePicker={true}
-                    />
-                </div>
-            )}
+            {props.isChatOpen && props.showPicker && props.reactionPicker}
         </div>
     );
 }

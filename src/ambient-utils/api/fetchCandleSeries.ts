@@ -1,17 +1,18 @@
-import { ChainSpec, CrocEnv, toDisplayPrice } from '@crocswap-libs/sdk';
-import { CACHE_UPDATE_FREQ_IN_MS, GCGO_OVERRIDE_URL } from '../constants';
+import { CrocEnv, toDisplayPrice } from '@crocswap-libs/sdk';
+import { CACHE_UPDATE_FREQ_IN_MS } from '../constants';
+import { SpotPriceFn } from '../dataLayer';
 import {
-    CandlesByPoolAndDurationIF,
     CandleDataIF,
     CandleDataServerIF,
+    CandlesByPoolAndDurationIF,
 } from '../types/candleData';
 import { TokenPriceFn } from './fetchTokenPrice';
-import { SpotPriceFn } from '../dataLayer';
 
 export async function fetchCandleSeriesHybrid(
     isFetchEnabled: boolean,
-    chainData: ChainSpec,
-    graphCacheUrl: string,
+    chainId: string,
+    poolIndex: number,
+    GCGO_URL: string,
     period: number,
     baseTokenAddress: string,
     quoteTokenAddress: string,
@@ -24,8 +25,9 @@ export async function fetchCandleSeriesHybrid(
 ): Promise<CandlesByPoolAndDurationIF | undefined> {
     const candles = await fetchCandleSeriesCroc(
         isFetchEnabled,
-        chainData,
-        graphCacheUrl,
+        chainId,
+        poolIndex,
+        GCGO_URL,
         period,
         baseTokenAddress,
         quoteTokenAddress,
@@ -50,53 +52,14 @@ export async function fetchCandleSeriesHybrid(
         endTime = Math.floor(Date.now() / 1000);
     }
 
-    // try {
-    //     const stitchTime = Math.floor(
-    //         Math.min(endTime, ...candles.candles.map((c) => c.time)),
-    //     );
-    //     const stitchN = nCandles - candles.candles.length;
-
-    //     // If not backfill with Uniswap candles
-    //     const uniCandles = await fetchCandleSeriesUniswap(
-    //         isFetchEnabled,
-    //         baseTokenAddress,
-    //         quoteTokenAddress,
-    //         chainData,
-    //         period,
-    //         baseTokenAddress,
-    //         quoteTokenAddress,
-    //         stitchTime.toString(),
-    //         stitchN.toString(),
-    //         signal,
-    //     );
-
-    //     if (!uniCandles) {
-    //         return candles;
-    //     }
-
-    //     // Sanitize volume, tvl and fee data from Uni data
-    //     uniCandles.forEach((u) => {
-    //         u.tvlData.tvl = 0;
-    //         u.volumeUSD = 0;
-    //         u.averageLiquidityFee = 0;
-    //     });
-
-    //     candles.candles = candles.candles.concat(uniCandles);
-    // } catch (e) {
-    //     if (e.name === 'AbortError') {
-    //         console.warn('Zoom request cancelled');
-    //     } else {
-    //         console.warn(e);
-    //     }
-    // }
-
     return candles;
 }
 
 export async function fetchCandleSeriesCroc(
     isFetchEnabled: boolean,
-    chainData: ChainSpec,
-    graphCacheUrl: string,
+    chainId: string,
+    poolIndex: number,
+    GCGO_URL: string,
     period: number,
     baseTokenAddress: string,
     quoteTokenAddress: string,
@@ -111,9 +74,7 @@ export async function fetchCandleSeriesCroc(
         return undefined;
     }
 
-    const candleSeriesEndpoint = GCGO_OVERRIDE_URL
-        ? GCGO_OVERRIDE_URL + '/pool_candles'
-        : graphCacheUrl + '/pool_candles';
+    const candleSeriesEndpoint = GCGO_URL + '/pool_candles';
 
     if (endTime == 0) {
         endTime = Math.floor(Date.now() / 1000);
@@ -125,11 +86,11 @@ export async function fetchCandleSeriesCroc(
     const reqOptions = new URLSearchParams({
         base: baseTokenAddress,
         quote: quoteTokenAddress,
-        poolIdx: chainData.poolIndex.toString(),
+        poolIdx: poolIndex.toString(),
         period: period.toString(),
         n: capNumDurations(nCandles).toString(),
         time: startTime.toString(),
-        chainId: chainData.chainId,
+        chainId: chainId,
     });
 
     return fetch(candleSeriesEndpoint + '?' + reqOptions, { signal })
@@ -144,8 +105,8 @@ export async function fetchCandleSeriesCroc(
                 payload,
                 baseTokenAddress,
                 quoteTokenAddress,
-                chainData.poolIndex,
-                chainData.chainId,
+                poolIndex,
+                chainId,
                 crocEnv,
                 cachedFetchTokenPrice,
                 cachedQuerySpotPrice,
@@ -155,8 +116,8 @@ export async function fetchCandleSeriesCroc(
                 pool: {
                     baseAddress: baseTokenAddress,
                     quoteAddress: quoteTokenAddress,
-                    poolIdx: chainData.poolIndex,
-                    chainId: chainData.chainId,
+                    poolIdx: poolIndex,
+                    chainId: chainId,
                 },
 
                 duration: period,
@@ -209,6 +170,8 @@ async function expandPoolStats(
     const baseUsdPrice = (await basePricePromise)?.usdPrice;
     const quoteUsdPrice = (await quotePricePromise)?.usdPrice;
 
+    if ((await crocEnv.context).chain.chainId !== chainId) return []; // ! ben
+
     const spotPrice = await cachedQuerySpotPrice(
         crocEnv,
         base,
@@ -222,13 +185,13 @@ async function expandPoolStats(
     const basePrice = baseUsdPrice
         ? baseUsdPrice
         : displayPrice && quoteUsdPrice
-        ? quoteUsdPrice / displayPrice
-        : 0.0;
+          ? quoteUsdPrice / displayPrice
+          : 0.0;
     const quotePrice = quoteUsdPrice
         ? quoteUsdPrice
         : displayPrice && baseUsdPrice
-        ? baseUsdPrice * displayPrice
-        : 0.0;
+          ? baseUsdPrice * displayPrice
+          : 0.0;
 
     return decorateCandleData(
         payload,
@@ -294,82 +257,3 @@ function decorateCandleData(
             };
         });
 }
-
-// function translateUniswapTokens(
-//     baseToken: string,
-//     quoteToken: string,
-// ): { baseToken: string; quoteToken: string } {
-//     const WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
-//     const ZERO = '0x0000000000000000000000000000000000000000';
-//     if (baseToken === WETH) {
-//         return { baseToken: ZERO, quoteToken: quoteToken };
-//     } else if (quoteToken === WETH) {
-//         return { baseToken: ZERO, quoteToken: baseToken };
-//     } else {
-//         return { baseToken: baseToken, quoteToken: quoteToken };
-//     }
-// }
-
-// async function fetchCandleSeriesUniswap(
-//     isFetchEnabled: boolean,
-//     mainnetBaseTokenAddress: string,
-//     mainnetQuoteTokenAddress: string,
-//     chainData: ChainSpec,
-//     period: number,
-//     baseTokenAddress: string,
-//     quoteTokenAddress: string,
-//     time: string,
-//     candleNeeded: string,
-//     signal?: AbortSignal,
-// ): Promise<CandleDataIF[] | undefined | void> {
-//     const { baseToken: mainnetBase, quoteToken: mainnetQuote } =
-//         translateUniswapTokens(
-//             mainnetBaseTokenAddress,
-//             mainnetQuoteTokenAddress,
-//         );
-
-//     const httpGraphCacheServerDomain = HISTORICAL_CANDLES_URL;
-//     if (isFetchEnabled) {
-//         try {
-//             if (httpGraphCacheServerDomain) {
-//                 const candleSeriesCacheEndpoint =
-//                     HISTORICAL_CANDLES_URL + '/candle_series?';
-
-//                 return fetch(
-//                     candleSeriesCacheEndpoint +
-//                         new URLSearchParams({
-//                             base: mainnetBase.toLowerCase(),
-//                             quote: mainnetQuote.toLowerCase(),
-//                             poolIdx: '36000',
-//                             // poolIdx: chainData.poolIndex.toString(),
-//                             period: period.toString(),
-//                             time: time, // optional
-//                             n: candleNeeded, // positive integer
-//                             chainId: chainData.chainId,
-//                             dex: 'all',
-//                             poolStats: 'true',
-//                             concise: 'true',
-//                             poolStatsChainIdOverride: chainData.chainId,
-//                             poolStatsBaseOverride:
-//                                 baseTokenAddress.toLowerCase(),
-//                             poolStatsQuoteOverride:
-//                                 quoteTokenAddress.toLowerCase(),
-//                             poolStatsPoolIdxOverride:
-//                                 chainData.poolIndex.toString(),
-//                         }),
-//                     { signal },
-//                 )
-//                     .then((response) => response?.json())
-//                     .then((json) => {
-//                         const candles = json?.data;
-//                         if (candles) {
-//                             return candles as CandleDataIF[];
-//                         }
-//                     })
-//                     .catch(console.warn);
-//             }
-//         } catch (error) {
-//             console.warn({ error });
-//         }
-//     }
-// }

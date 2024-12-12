@@ -1,8 +1,8 @@
-import styles from './RangeActionModal.module.css';
-import RemoveRangeWidth from './RemoveRangeWidth/RemoveRangeWidth';
-import RangeActionTokenHeader from './RangeActionTokenHeader/RangeActionTokenHeader';
-import RemoveRangeInfo from './RangeActionInfo/RemoveRangeInfo';
 import { memo, useContext, useEffect, useMemo, useState } from 'react';
+import RemoveRangeInfo from './RangeActionInfo/RemoveRangeInfo';
+import styles from './RangeActionModal.module.css';
+import RangeActionTokenHeader from './RangeActionTokenHeader/RangeActionTokenHeader';
+import RemoveRangeWidth from './RemoveRangeWidth/RemoveRangeWidth';
 
 import {
     PositionIF,
@@ -10,40 +10,41 @@ import {
     RangeModalAction,
 } from '../../ambient-utils/types';
 import Button from '../Form/Button';
-import RangeActionSettings from './RangeActionSettings/RangeActionSettings';
 import ExtraControls from './RangeActionExtraControls/RangeActionExtraControls';
+import RangeActionSettings from './RangeActionSettings/RangeActionSettings';
 
+import { lookupChain } from '@crocswap-libs/sdk/dist/context';
+import { IS_LOCAL_ENV } from '../../ambient-utils/constants';
+import {
+    GAS_DROPS_ESTIMATE_RANGE_HARVEST,
+    GAS_DROPS_ESTIMATE_RANGE_REMOVAL,
+    NUM_GWEI_IN_WEI,
+} from '../../ambient-utils/constants/';
+import {
+    getFormattedNumber,
+    getPositionData,
+    isStablePair,
+} from '../../ambient-utils/dataLayer';
+import { getPositionHash } from '../../ambient-utils/dataLayer/functions/getPositionHash';
+import { AppStateContext } from '../../contexts/AppStateContext';
+import { CachedDataContext } from '../../contexts/CachedDataContext';
+import { ChainDataContext } from '../../contexts/ChainDataContext';
+import { CrocEnvContext } from '../../contexts/CrocEnvContext';
+import { ReceiptContext } from '../../contexts/ReceiptContext';
+import { TokenContext } from '../../contexts/TokenContext';
+import { UserDataContext } from '../../contexts/UserDataContext';
+import { UserPreferenceContext } from '../../contexts/UserPreferenceContext';
+import { useProcessRange } from '../../utils/hooks/useProcessRange';
 import {
     isTransactionFailedError,
     isTransactionReplacedError,
     TransactionError,
 } from '../../utils/TransactionError';
-import { GCGO_OVERRIDE_URL, IS_LOCAL_ENV } from '../../ambient-utils/constants';
-import { CrocEnvContext } from '../../contexts/CrocEnvContext';
-import { UserPreferenceContext } from '../../contexts/UserPreferenceContext';
-import { ChainDataContext } from '../../contexts/ChainDataContext';
-import {
-    getPositionData,
-    getFormattedNumber,
-    isStablePair,
-} from '../../ambient-utils/dataLayer';
-import { TokenContext } from '../../contexts/TokenContext';
-import { CachedDataContext } from '../../contexts/CachedDataContext';
-import HarvestPositionInfo from './RangeActionInfo/HarvestPositionInfo';
-import ModalHeader from '../Global/ModalHeader/ModalHeader';
 import Modal from '../Global/Modal/Modal';
-import SubmitTransaction from '../Trade/TradeModules/SubmitTransaction/SubmitTransaction';
-import { lookupChain } from '@crocswap-libs/sdk/dist/context';
-import {
-    GAS_DROPS_ESTIMATE_RANGE_REMOVAL,
-    GAS_DROPS_ESTIMATE_RANGE_HARVEST,
-    NUM_GWEI_IN_WEI,
-} from '../../ambient-utils/constants/';
-import { ReceiptContext } from '../../contexts/ReceiptContext';
-import { UserDataContext } from '../../contexts/UserDataContext';
-import { useProcessRange } from '../../utils/hooks/useProcessRange';
-import { getPositionHash } from '../../ambient-utils/dataLayer/functions/getPositionHash';
+import ModalHeader from '../Global/ModalHeader/ModalHeader';
 import SmolRefuelLink from '../Global/SmolRefuelLink/SmolRefuelLink';
+import SubmitTransaction from '../Trade/TradeModules/SubmitTransaction/SubmitTransaction';
+import HarvestPositionInfo from './RangeActionInfo/HarvestPositionInfo';
 
 interface propsIF {
     type: RangeModalAction;
@@ -54,15 +55,12 @@ interface propsIF {
 
 function RangeActionModal(props: propsIF) {
     const { type, position, onClose, isAccountView } = props;
-
-    const { userAddress } = useContext(UserDataContext);
     const {
-        crocEnv,
-        activeNetwork,
-        provider,
-        chainData: { chainId, poolIndex },
-        ethMainnetUsdPrice,
-    } = useContext(CrocEnvContext);
+        activeNetwork: { GCGO_URL, chainId, poolIndex },
+    } = useContext(AppStateContext);
+    const { userAddress } = useContext(UserDataContext);
+    const { crocEnv, provider, ethMainnetUsdPrice } =
+        useContext(CrocEnvContext);
 
     const {
         isAmbient,
@@ -125,9 +123,7 @@ function RangeActionModal(props: propsIF) {
         (feeLiqBaseDecimalCorrected || 0) + (feeLiqQuoteDecimalCorrected || 0) >
         0;
 
-    const positionStatsCacheEndpoint = GCGO_OVERRIDE_URL
-        ? GCGO_OVERRIDE_URL + '/position_stats?'
-        : activeNetwork.graphCacheUrl + '/position_stats?';
+    const positionStatsCacheEndpoint = GCGO_URL + '/position_stats?';
 
     const [removalGasPriceinDollars, setRemovalGasPriceinDollars] = useState<
         string | undefined
@@ -176,7 +172,7 @@ function RangeActionModal(props: propsIF) {
             );
 
             const liqBigInt = isAmbient
-                ? (await pos.queryAmbient()).seeds
+                ? (await pos.queryAmbientPos()).liq
                 : (await pos.queryRangePos(position.bidTick, position.askTick))
                       .liq;
             setCurrentLiquidity(liqBigInt);
@@ -224,6 +220,7 @@ function RangeActionModal(props: propsIF) {
                         if (data && crocEnv && provider) {
                             // temporarily skip ENS fetch
                             const skipENSFetch = true;
+                            const forceOnchainLiqUpdate = true;
                             const position = await getPositionData(
                                 data,
                                 tokens.tokenUniv,
@@ -235,6 +232,7 @@ function RangeActionModal(props: propsIF) {
                                 cachedTokenDetails,
                                 cachedEnsResolve,
                                 skipENSFetch,
+                                forceOnchainLiqUpdate,
                             );
                             setPosLiqBaseDecimalCorrected(
                                 position.positionLiqBaseDecimalCorrected,

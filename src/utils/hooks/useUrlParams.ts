@@ -1,20 +1,20 @@
+import { ethers } from 'ethers';
 import { useContext, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { ethers } from 'ethers';
 import { fetchContractDetails } from '../../ambient-utils/api';
-import { tokenMethodsIF } from '../../App/hooks/useTokens';
-import { pageNames, linkGenMethodsIF, useLinkGen } from './useLinkGen';
 import { TokenIF } from '../../ambient-utils/types';
-// import { getDefaultPairForChain } from '../../ambient-utils/constants';
+import { tokenMethodsIF } from '../../App/hooks/useTokens';
+import { linkGenMethodsIF, pageNames, useLinkGen } from './useLinkGen';
+// import{ getDefaultPairForChain } from '../../ambient-utils/constants';
+import { ZERO_ADDRESS } from '../../ambient-utils/constants';
 import {
     remapTokenIfWrappedNative,
     validateAddress,
     validateChain,
 } from '../../ambient-utils/dataLayer';
-import { TradeDataContext } from '../../contexts/TradeDataContext';
-import { ZERO_ADDRESS } from '../../ambient-utils/constants';
 import { getTopPairedTokenAddress } from '../../ambient-utils/dataLayer/functions/getTopPairedTokenAddress';
 import { CachedDataContext } from '../../contexts/CachedDataContext';
+import { TradeDataContext } from '../../contexts/TradeDataContext';
 
 /* Hook to process GET-request style parameters passed to the URL. This includes
  * chain, tokens, and context-specific tick parameters. All action is intermediated
@@ -229,7 +229,6 @@ export const useUrlParams = (
         if (lookup) {
             return lookup;
         } else {
-            // const provider = inflateProvider(chainId);
             if (provider) {
                 return fetchContractDetails(
                     provider,
@@ -240,20 +239,6 @@ export const useUrlParams = (
             }
         }
     }
-
-    // function inflateProvider(chainId: string) {
-    //     if (!provider) {
-    //         provider = useProvider({ chainId: parseInt(chainId) });
-    //         if (!provider) {
-    //             console.warn(
-    //                 'Cannot set provider to lookup token address on chain',
-    //                 chainId,
-    //             );
-    //             return undefined;
-    //         }
-    //     }
-    //     return provider;
-    // }
 
     function processOptParam(
         paramName: validParamsType,
@@ -286,13 +271,6 @@ export const useUrlParams = (
         return undefined;
     }
 
-    // removing to allow the first default token to be set as token b by default
-    // function processDefaultTokens(chainToUse: string) {
-    //     const [dfltA, dfltB] = getDefaultPairForChain(chainToUse);
-    //     setTokenA(dfltA);
-    //     setTokenB(dfltB);
-    // }
-
     useEffect((): (() => void) => {
         let flag = true;
 
@@ -309,16 +287,12 @@ export const useUrlParams = (
 
             // prevent race condition involving lookup and fetching contract
             if (!flag) return;
-
             // If both tokens are valid and have data for this chain, use those
             // Otherwise fallback to the chain's default pair.
             if (tokenPair && tokenPair[0].decimals && tokenPair[1].decimals) {
                 setTokenA(tokenPair[0]);
                 setTokenB(tokenPair[1]);
             }
-            //  else {
-            //     processDefaultTokens(chainToUse);
-            // }
         };
 
         try {
@@ -329,9 +303,6 @@ export const useUrlParams = (
             if (tokenA && tokenB) {
                 processTokenAddr(tokenA, tokenB, chainToUse);
             }
-            // else {
-            //     processDefaultTokens(chainToUse);
-            // }
 
             processOptParam('limitTick', async (tick: string) => {
                 setLimitTick(parseInt(tick));

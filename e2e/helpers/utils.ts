@@ -1,7 +1,7 @@
-import { chromium, Page, BrowserContext, Browser } from 'playwright';
-import * as path from 'path';
 import * as dotenv from 'dotenv';
 import fs from 'fs';
+import * as path from 'path';
+import { BrowserContext, chromium, Page } from 'playwright';
 
 dotenv.config({ path: '.env.local' });
 
@@ -73,8 +73,7 @@ export async function initWallet(context: BrowserContext) {
     await waiter(2);
 
     console.log('.............................');
-    console.log(process.env);
-    console.log(process.env.local);
+    console.log('Environment variables loaded');
     console.log('.............................');
 
     const seedEnv = process.env.TEST_METAMASK_SEED
@@ -82,7 +81,7 @@ export async function initWallet(context: BrowserContext) {
         : '';
     const seed = seedEnv.split(',');
 
-    console.log(seed);
+    console.log('Seed phrase loaded');
 
     async function processWallet(page) {
         const elementHandle = await page.$('#onboarding__terms-checkbox');
@@ -162,7 +161,7 @@ export async function initWallet(context: BrowserContext) {
             page.url().includes('chrome-extension') &&
             page.url().includes('home.html')
         ) {
-            console.log('page found', page.url());
+            console.log('Page found with URL:', page.url());
             await processWallet(page);
         }
     });

@@ -1,18 +1,17 @@
 import { CrocEnv } from '@crocswap-libs/sdk';
 import { useContext, useEffect, useState } from 'react';
-import { PoolIF, GCServerPoolIF, TokenIF } from '../../ambient-utils/types';
 import { fetchPoolList } from '../../ambient-utils/api';
+import { GCServerPoolIF, PoolIF, TokenIF } from '../../ambient-utils/types';
+import { AppStateContext } from '../../contexts';
 import { TokenContext } from '../../contexts/TokenContext';
-import { CrocEnvContext } from '../../contexts/CrocEnvContext';
 
-export const usePoolList = (
-    graphCacheUrl: string,
-    crocEnv?: CrocEnv,
-): PoolIF[] => {
+export const usePoolList = (GCGO_URL: string, crocEnv?: CrocEnv): PoolIF[] => {
+    const {
+        activeNetwork: { poolIndex },
+    } = useContext(AppStateContext);
     const {
         tokens: { verify, getTokenByAddress, tokenUniv },
     } = useContext(TokenContext);
-    const { chainData } = useContext(CrocEnvContext);
 
     const [poolList, setPoolList] = useState<PoolIF[]>([]);
 
@@ -23,7 +22,7 @@ export const usePoolList = (
 
         const pools: Promise<GCServerPoolIF[]> = fetchPoolList(
             crocEnv,
-            graphCacheUrl,
+            GCGO_URL,
         );
         Promise.resolve<GCServerPoolIF[]>(pools)
             .then((res: GCServerPoolIF[]) => {
@@ -34,7 +33,7 @@ export const usePoolList = (
                                 verify(result.base) && verify(result.quote),
                         )
                         // temporary filter until gcgo filters on poolIdx
-                        .filter((pool) => pool.poolIdx === chainData.poolIndex)
+                        .filter((pool) => pool.poolIdx === poolIndex)
                         .map((result: GCServerPoolIF) => {
                             const baseToken: TokenIF | undefined =
                                 getTokenByAddress(result.base);

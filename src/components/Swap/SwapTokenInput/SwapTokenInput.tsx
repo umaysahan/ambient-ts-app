@@ -1,28 +1,32 @@
 import { CrocImpact } from '@crocswap-libs/sdk';
 import {
     Dispatch,
+    memo,
     SetStateAction,
     useContext,
     useEffect,
-    useState,
-    memo,
     useRef,
+    useState,
 } from 'react';
+import {
+    precisionOfInput,
+    truncateDecimals,
+} from '../../../ambient-utils/dataLayer';
 import { calcImpact } from '../../../App/functions/calcImpact';
 import useDebounce from '../../../App/hooks/useDebounce';
+import { AppStateContext } from '../../../contexts';
 import { ChainDataContext } from '../../../contexts/ChainDataContext';
 import { CrocEnvContext } from '../../../contexts/CrocEnvContext';
 import { PoolContext } from '../../../contexts/PoolContext';
+import { TradeDataContext } from '../../../contexts/TradeDataContext';
 import { TradeTableContext } from '../../../contexts/TradeTableContext';
 import { TradeTokenContext } from '../../../contexts/TradeTokenContext';
+import { UserDataContext } from '../../../contexts/UserDataContext';
 import { FlexContainer } from '../../../styled/Common';
-import { truncateDecimals } from '../../../ambient-utils/dataLayer';
 import { linkGenMethodsIF, useLinkGen } from '../../../utils/hooks/useLinkGen';
 import { formatTokenInput } from '../../../utils/numbers';
 import TokenInputWithWalletBalance from '../../Form/TokenInputWithWalletBalance';
 import TokensArrow from '../../Global/TokensArrow/TokensArrow';
-import { UserDataContext } from '../../../contexts/UserDataContext';
-import { TradeDataContext } from '../../../contexts/TradeDataContext';
 
 interface propsIF {
     sellQtyString: { value: string; set: Dispatch<SetStateAction<string>> };
@@ -72,12 +76,14 @@ function SwapTokenInput(props: propsIF) {
         percentDiffUsdValue,
     } = props;
 
+    const { crocEnv } = useContext(CrocEnvContext);
+
     const {
-        crocEnv,
-        chainData: { chainId },
-    } = useContext(CrocEnvContext);
+        activeNetwork: { chainId },
+    } = useContext(AppStateContext);
     const { lastBlockNumber } = useContext(ChainDataContext);
     const { isPoolInitialized } = useContext(PoolContext);
+    const { isUserOnline } = useContext(AppStateContext);
     const {
         tokenABalance,
         tokenBBalance,
@@ -128,8 +134,23 @@ function SwapTokenInput(props: propsIF) {
     };
 
     useEffect(() => {
-        handleBlockUpdate();
-    }, [lastBlockNumber, contextMatchesParams, isTokenAPrimary]);
+        (async () => {
+            if (
+                isUserOnline &&
+                crocEnv &&
+                (await crocEnv.context).chain.chainId === chainId
+            ) {
+                handleBlockUpdate();
+            }
+        })();
+    }, [
+        isUserOnline,
+        lastBlockNumber,
+        contextMatchesParams,
+        isTokenAPrimary,
+        crocEnv,
+        chainId,
+    ]);
 
     useEffect(() => {
         if (shouldSwapDirectionReverse) {
@@ -139,12 +160,12 @@ function SwapTokenInput(props: propsIF) {
     }, [shouldSwapDirectionReverse]);
 
     useEffect(() => {
-        if (debouncedLastInput !== undefined) {
+        if (isUserOnline && debouncedLastInput !== undefined) {
             isTokenAPrimary
                 ? handleTokenAChangeEvent(debouncedLastInput)
                 : handleTokenBChangeEvent(debouncedLastInput);
         }
-    }, [debouncedLastInput]);
+    }, [debouncedLastInput, isUserOnline]);
 
     const lastQuery = useRef({ isAutoUpdate: false, inputValue: '' });
 
@@ -152,7 +173,12 @@ function SwapTokenInput(props: propsIF) {
         input: string,
         sellToken: boolean,
     ): Promise<number | undefined> {
-        if (isNaN(parseFloat(input)) || parseFloat(input) === 0 || !crocEnv) {
+        if (
+            !isUserOnline ||
+            isNaN(parseFloat(input)) ||
+            parseFloat(input) <= 0 ||
+            !crocEnv
+        ) {
             setIsLiquidityInsufficient(false);
 
             return undefined;
@@ -175,10 +201,24 @@ function SwapTokenInput(props: propsIF) {
             });
         }
         if (sellToken) {
+            let precisionForTruncation = 6;
+
             const rawTokenBQty = impact?.buyQty ? parseFloat(impact.buyQty) : 0;
+
+            // find the largest precision that doesn't exceed the token's decimal places
+            while (
+                precisionOfInput(
+                    rawTokenBQty.toPrecision(precisionForTruncation),
+                ) > tokenB.decimals &&
+                precisionForTruncation > 1
+            ) {
+                precisionForTruncation--;
+            }
             const truncatedTokenBQty = rawTokenBQty
                 ? rawTokenBQty < 2
-                    ? rawTokenBQty.toPrecision(6)
+                    ? rawTokenBQty
+                          .toPrecision(precisionForTruncation)
+                          .replace(/\.?0+$/, '')
                     : truncateDecimals(rawTokenBQty, rawTokenBQty < 100 ? 3 : 2)
                 : '';
 
@@ -188,12 +228,27 @@ function SwapTokenInput(props: propsIF) {
                 setIsBuyLoading(false);
             }
         } else {
+            let precisionForTruncation = 6;
+
             const rawTokenAQty = impact?.sellQty
                 ? parseFloat(impact.sellQty)
                 : 0;
+
+            // find the largest precision that doesn't exceed the token's decimal places
+            while (
+                precisionOfInput(
+                    rawTokenAQty.toPrecision(precisionForTruncation),
+                ) > tokenA.decimals &&
+                precisionForTruncation > 1
+            ) {
+                precisionForTruncation--;
+            }
+
             const truncatedTokenAQty = rawTokenAQty
                 ? rawTokenAQty < 2
-                    ? rawTokenAQty.toPrecision(6)
+                    ? rawTokenAQty
+                          .toPrecision(precisionForTruncation)
+                          .replace(/\.?0+$/, '')
                     : truncateDecimals(rawTokenAQty, rawTokenAQty < 100 ? 3 : 2)
                 : '';
 
@@ -250,9 +305,20 @@ function SwapTokenInput(props: propsIF) {
 
     const handleTokenAChangeEvent = async (value?: string) => {
         if (value !== undefined) {
+            if (value === '') {
+                setBuyQtyString('');
+                setSellQtyString('');
+                setPrimaryQuantity('');
+                setIsBuyLoading(false);
+                return;
+            }
             if (parseFloat(value) !== 0) {
                 const truncatedInputStr = formatTokenInput(value, tokenA);
                 await refreshImpact(truncatedInputStr, true);
+            } else {
+                setBuyQtyString('');
+                setPrimaryQuantity(value);
+                setIsBuyLoading(false);
             }
         } else {
             lastQuery.current = {
@@ -265,9 +331,20 @@ function SwapTokenInput(props: propsIF) {
 
     const handleTokenBChangeEvent = async (value?: string) => {
         if (value !== undefined) {
+            if (value === '') {
+                setBuyQtyString('');
+                setSellQtyString('');
+                setPrimaryQuantity('');
+                setIsSellLoading(false);
+                return;
+            }
             if (parseFloat(value) !== 0) {
                 const truncatedInputStr = formatTokenInput(value, tokenB);
                 await refreshImpact(truncatedInputStr, false);
+            } else {
+                setSellQtyString('');
+                setPrimaryQuantity(value);
+                setIsSellLoading(false);
             }
         } else {
             lastQuery.current = {
@@ -292,8 +369,12 @@ function SwapTokenInput(props: propsIF) {
 
     // refresh token data when swap module initializes
     useEffect(() => {
-        refreshTokenData();
-    }, []);
+        (async () => {
+            if (crocEnv && (await crocEnv.context).chain.chainId === chainId) {
+                await refreshTokenData();
+            }
+        })();
+    }, [crocEnv, chainId, isUserOnline]);
 
     useEffect(() => {
         if (isTokenAPrimary) {
@@ -306,6 +387,25 @@ function SwapTokenInput(props: propsIF) {
             }
         }
     }, [isTokenAPrimary, sellQtyString, buyQtyString, primaryQuantity]);
+
+    function reverseForAmbient(): void {
+        isTokenAPrimary
+            ? sellQtyString !== '' && parseFloat(sellQtyString) > 0
+                ? setIsSellLoading(true)
+                : null
+            : buyQtyString !== '' && parseFloat(buyQtyString) > 0
+              ? setIsBuyLoading(true)
+              : null;
+
+        if (!isTokenAPrimary) {
+            setSellQtyString(primaryQuantity);
+        } else {
+            setBuyQtyString(primaryQuantity);
+        }
+        setIsTokenAPrimary(!isTokenAPrimary);
+
+        reverseTokens();
+    }
 
     return (
         <FlexContainer flexDirection='column' gap={8}>
@@ -325,6 +425,7 @@ function SwapTokenInput(props: propsIF) {
                 isTokenEth={isSellTokenEth}
                 isDexSelected={isWithdrawFromDexChecked}
                 isLoading={isSellLoading && buyQtyString !== ''}
+                impactCalculationPending={isBuyLoading && sellQtyString !== ''}
                 showPulseAnimation={showSwapPulseAnimation}
                 handleTokenInputEvent={debouncedTokenAChangeEvent}
                 reverseTokens={reverseTokens}
@@ -341,11 +442,7 @@ function SwapTokenInput(props: propsIF) {
                 justifyContent='center'
                 alignItems='center'
             >
-                <TokensArrow
-                    onClick={() => {
-                        reverseTokens();
-                    }}
-                />
+                <TokensArrow onClick={() => reverseForAmbient()} />
             </FlexContainer>
             <TokenInputWithWalletBalance
                 fieldId='swap_buy'
@@ -363,6 +460,7 @@ function SwapTokenInput(props: propsIF) {
                 isTokenEth={isBuyTokenEth}
                 isDexSelected={isSaveAsDexSurplusChecked}
                 isLoading={isBuyLoading && sellQtyString !== ''}
+                impactCalculationPending={isSellLoading && buyQtyString !== ''}
                 showPulseAnimation={showSwapPulseAnimation}
                 handleTokenInputEvent={debouncedTokenBChangeEvent}
                 reverseTokens={reverseTokens}

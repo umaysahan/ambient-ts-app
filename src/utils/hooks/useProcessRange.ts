@@ -1,19 +1,19 @@
+import { CrocEnv } from '@crocswap-libs/sdk';
+import moment from 'moment';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import {
     getChainExplorer,
+    getFormattedNumber,
+    getMoneynessRank,
     getUnicodeCharacter,
     trimString,
-    getMoneynessRank,
-    getFormattedNumber,
 } from '../../ambient-utils/dataLayer';
-import { PositionIF } from '../../ambient-utils/types';
-import { useContext, useEffect, useMemo, useState } from 'react';
-import moment from 'moment';
-import { TradeDataContext } from '../../contexts/TradeDataContext';
-import { useFetchBatch } from '../../App/hooks/useFetchBatch';
-import { UserDataContext } from '../../contexts/UserDataContext';
 import { getPositionHash } from '../../ambient-utils/dataLayer/functions/getPositionHash';
-import { CrocEnv } from '@crocswap-libs/sdk';
+import { PositionIF } from '../../ambient-utils/types';
+import { useFetchBatch } from '../../App/hooks/useFetchBatch';
 import { CachedDataContext } from '../../contexts/CachedDataContext';
+import { TradeDataContext } from '../../contexts/TradeDataContext';
+import { UserDataContext } from '../../contexts/UserDataContext';
 
 export const useProcessRange = (
     position: PositionIF,
@@ -83,8 +83,8 @@ export const useProcessRange = (
     const ensName = ensAddress
         ? ensAddress
         : position.ensResolution
-        ? position.ensResolution
-        : null;
+          ? position.ensResolution
+          : null;
 
     // const ownerId = position.user ? getAddress(position.user) : position.user;
 
@@ -215,7 +215,7 @@ export const useProcessRange = (
         ? position.lowRangeDisplayInQuote
         : position.lowRangeDisplayInBase;
 
-    const maxRangeDenomByMoneyness = isBaseTokenMoneynessGreaterOrEqual
+    let maxRangeDenomByMoneyness = isBaseTokenMoneynessGreaterOrEqual
         ? position.highRangeDisplayInQuote
         : position.highRangeDisplayInBase;
 
@@ -229,24 +229,24 @@ export const useProcessRange = (
                 ? bidTickPriceDecimalCorrected * basePrice
                 : undefined
             : quotePrice
-            ? bidTickInvPriceDecimalCorrected * quotePrice
-            : undefined
+              ? bidTickInvPriceDecimalCorrected * quotePrice
+              : undefined
         : isDenomBase
-        ? quotePrice
-            ? bidTickInvPriceDecimalCorrected * quotePrice
-            : undefined
-        : basePrice
-        ? bidTickPriceDecimalCorrected * basePrice
-        : undefined;
+          ? quotePrice
+              ? bidTickInvPriceDecimalCorrected * quotePrice
+              : undefined
+          : basePrice
+            ? bidTickPriceDecimalCorrected * basePrice
+            : undefined;
     const lowDisplayPriceInUsd =
         position.positionType === 'ambient'
             ? '0'
             : lowDisplayPriceInUsdNum
-            ? getFormattedNumber({
-                  value: lowDisplayPriceInUsdNum,
-                  prefix: '$',
-              })
-            : '...';
+              ? getFormattedNumber({
+                    value: lowDisplayPriceInUsdNum,
+                    prefix: '$',
+                })
+              : '...';
 
     const highDisplayPriceInUsdNum = isAccountView
         ? isBaseTokenMoneynessGreaterOrEqual
@@ -254,27 +254,35 @@ export const useProcessRange = (
                 ? askTickPriceDecimalCorrected * basePrice
                 : undefined
             : quotePrice
-            ? askTickInvPriceDecimalCorrected * quotePrice
-            : undefined
+              ? askTickInvPriceDecimalCorrected * quotePrice
+              : undefined
         : isDenomBase
-        ? quotePrice
-            ? askTickInvPriceDecimalCorrected * quotePrice
-            : undefined
-        : basePrice
-        ? askTickPriceDecimalCorrected * basePrice
-        : undefined;
+          ? quotePrice
+              ? askTickInvPriceDecimalCorrected * quotePrice
+              : undefined
+          : basePrice
+            ? askTickPriceDecimalCorrected * basePrice
+            : undefined;
+
     const highDisplayPriceInUsd =
-        position.positionType === 'ambient'
-            ? '∞'
+        position.positionType === 'ambient' ||
+        (highDisplayPriceInUsdNum !== undefined &&
+            highDisplayPriceInUsdNum > 10 ** 9) // interpret prices > $1 billion as infinity
+            ? '$∞'
             : highDisplayPriceInUsdNum
-            ? getFormattedNumber({
-                  value: highDisplayPriceInUsdNum,
-                  prefix: '$',
-              })
-            : '...';
+              ? getFormattedNumber({
+                    value: highDisplayPriceInUsdNum,
+                    prefix: '$',
+                })
+              : '...';
 
     const ambientOrMin = position.positionType === 'ambient' ? '0' : minRange;
-    const ambientOrMax = position.positionType === 'ambient' ? '∞' : maxRange;
+    let ambientOrMax = position.positionType === 'ambient' ? '∞' : maxRange;
+
+    if (/[bt]/.test(ambientOrMax)) {
+        ambientOrMax = '∞'; // interpret prices > $1 billion as infinity
+        maxRangeDenomByMoneyness = '∞';
+    }
 
     const width = (position.askTick - position.bidTick) / 100;
 
@@ -287,14 +295,8 @@ export const useProcessRange = (
 
     const quantitiesAvailable = baseQty !== undefined || quoteQty !== undefined;
 
-    const baseDisplayFrontend = quantitiesAvailable
-        ? `${baseQty || '0.00'}`
-        : '…';
     const baseDisplay = quantitiesAvailable ? baseQty || '0.00' : '…';
 
-    const quoteDisplayFrontend = quantitiesAvailable
-        ? `${quoteQty || '0.00'}`
-        : '…';
     const quoteDisplay = quantitiesAvailable ? quoteQty || '0.00' : '…';
 
     const ensNameOrOwnerTruncated = ensName
@@ -328,16 +330,16 @@ export const useProcessRange = (
             ? elapsedTimeInSecondsNum < 60
                 ? '< 1 min. '
                 : elapsedTimeInSecondsNum < 120
-                ? '1 min. '
-                : elapsedTimeInSecondsNum < 3600
-                ? `${Math.floor(elapsedTimeInSecondsNum / 60)} min. `
-                : elapsedTimeInSecondsNum < 7200
-                ? '1 hour '
-                : elapsedTimeInSecondsNum < 86400
-                ? `${Math.floor(elapsedTimeInSecondsNum / 3600)} hrs. `
-                : elapsedTimeInSecondsNum < 172800
-                ? '1 day '
-                : `${Math.floor(elapsedTimeInSecondsNum / 86400)} days `
+                  ? '1 min. '
+                  : elapsedTimeInSecondsNum < 3600
+                    ? `${Math.floor(elapsedTimeInSecondsNum / 60)} min. `
+                    : elapsedTimeInSecondsNum < 7200
+                      ? '1 hour '
+                      : elapsedTimeInSecondsNum < 86400
+                        ? `${Math.floor(elapsedTimeInSecondsNum / 3600)} hrs. `
+                        : elapsedTimeInSecondsNum < 172800
+                          ? '1 day '
+                          : `${Math.floor(elapsedTimeInSecondsNum / 86400)} days `
             : 'Pending...';
 
     const elapsedTimeSinceFirstMintString =
@@ -345,22 +347,22 @@ export const useProcessRange = (
             ? elapsedTimeSinceFirstMintInSecondsNum < 60
                 ? '< 1 min. '
                 : elapsedTimeSinceFirstMintInSecondsNum < 120
-                ? '1 min. '
-                : elapsedTimeSinceFirstMintInSecondsNum < 3600
-                ? `${Math.floor(
-                      elapsedTimeSinceFirstMintInSecondsNum / 60,
-                  )} min. `
-                : elapsedTimeSinceFirstMintInSecondsNum < 7200
-                ? '1 hour '
-                : elapsedTimeSinceFirstMintInSecondsNum < 86400
-                ? `${Math.floor(
-                      elapsedTimeSinceFirstMintInSecondsNum / 3600,
-                  )} hrs. `
-                : elapsedTimeSinceFirstMintInSecondsNum < 172800
-                ? '1 day '
-                : `${Math.floor(
-                      elapsedTimeSinceFirstMintInSecondsNum / 86400,
-                  )} days `
+                  ? '1 min. '
+                  : elapsedTimeSinceFirstMintInSecondsNum < 3600
+                    ? `${Math.floor(
+                          elapsedTimeSinceFirstMintInSecondsNum / 60,
+                      )} min. `
+                    : elapsedTimeSinceFirstMintInSecondsNum < 7200
+                      ? '1 hour '
+                      : elapsedTimeSinceFirstMintInSecondsNum < 86400
+                        ? `${Math.floor(
+                              elapsedTimeSinceFirstMintInSecondsNum / 3600,
+                          )} hrs. `
+                        : elapsedTimeSinceFirstMintInSecondsNum < 172800
+                          ? '1 day '
+                          : `${Math.floor(
+                                elapsedTimeSinceFirstMintInSecondsNum / 86400,
+                            )} days `
             : 'Pending...';
 
     return {
@@ -389,8 +391,6 @@ export const useProcessRange = (
         quoteTokenAddressTruncated,
         baseTokenLogo,
         quoteTokenLogo,
-        baseDisplayFrontend,
-        quoteDisplayFrontend,
         baseTokenSymbol,
         quoteTokenSymbol,
         baseTokenName,

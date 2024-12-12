@@ -1,16 +1,17 @@
+import { useContext } from 'react';
+import styled from 'styled-components';
+import { uriToHttp } from '../../../ambient-utils/dataLayer';
 import { TokenIF } from '../../../ambient-utils/types';
+import { AppStateContext } from '../../../contexts';
+import { FlexContainer } from '../../../styled/Common';
 import Button from '../../Form/Button';
 import DividerDark from '../DividerDark/DividerDark';
-import { lookupChain } from '@crocswap-libs/sdk/dist/context';
 import TokenIcon from '../TokenIcon/TokenIcon';
-import { uriToHttp } from '../../../ambient-utils/dataLayer';
 interface propsIF {
     customToken: TokenIF | null | 'querying';
     chooseToken: (tkn: TokenIF, isCustom: boolean) => void;
     chainId: string;
 }
-import styled from 'styled-components';
-import { FlexContainer } from '../../../styled/Common';
 
 export const MainContainer = styled.div`
     width: 100%;
@@ -44,9 +45,11 @@ export const TokenDisplay = styled.div`
 `;
 
 export default function SoloTokenImport(props: propsIF) {
-    const { customToken, chooseToken, chainId } = props;
+    const { customToken, chooseToken } = props;
 
-    const chainData = lookupChain(chainId);
+    const {
+        activeNetwork: { blockExplorer },
+    } = useContext(AppStateContext);
 
     const tokenNotFound = (
         <FlexContainer
@@ -95,9 +98,7 @@ export default function SoloTokenImport(props: propsIF) {
                 This token is not listed on Coingecko or any other major
                 reputable lists. Please be sure
                 <a
-                    href={
-                        chainData.blockExplorer + 'token/' + customToken.address
-                    }
+                    href={blockExplorer + 'token/' + customToken.address}
                     target='_blank'
                     rel='noopener noreferrer'
                     style={{

@@ -1,6 +1,7 @@
-import * as localLogos from '../../../assets/images/tokens/exports';
+import { excludedTokenAddressesLowercase } from '../../../ambient-utils/constants';
 import { uriToHttp } from '../../../ambient-utils/dataLayer';
 import { TokenIF } from '../../../ambient-utils/types';
+import * as localLogos from '../../../assets/images/tokens/exports';
 
 // all args are optional; calling fn without data is handled
 interface argsIF {
@@ -17,6 +18,16 @@ export default function processLogoSrc(args: argsIF): string {
 
     let localLogoLookupSymbol =
         args.token?.symbol?.toUpperCase() ?? args.symbol?.toUpperCase();
+
+    // Filter out excluded addresses
+    if (
+        excludedTokenAddressesLowercase.includes(
+            args.token?.address?.toLowerCase() ?? '',
+        )
+    ) {
+        return '';
+    }
+
     if (localLogoLookupSymbol === 'USD+') localLogoLookupSymbol = 'USDPLUS';
     if (localLogoLookupSymbol === 'PUNKETH-20')
         localLogoLookupSymbol = 'PUNKETH20';

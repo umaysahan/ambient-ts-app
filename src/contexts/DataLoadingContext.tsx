@@ -1,6 +1,6 @@
 import React, { createContext, useState } from 'react';
 
-interface DataLoadingContextIF {
+export interface DataLoadingContextIF {
     isConnectedUserTxDataLoading: boolean;
     isConnectedUserOrderDataLoading: boolean;
     isConnectedUserPoolOrderDataLoading: boolean;
@@ -22,9 +22,7 @@ interface DataLoadingContextIF {
     resetConnectedUserDataLoadingStatus: () => void;
 }
 
-export const DataLoadingContext = createContext<DataLoadingContextIF>(
-    {} as DataLoadingContextIF,
-);
+export const DataLoadingContext = createContext({} as DataLoadingContextIF);
 
 export const DataLoadingContextProvider = (props: {
     children: React.ReactNode;

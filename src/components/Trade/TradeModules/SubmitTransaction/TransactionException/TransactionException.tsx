@@ -1,14 +1,13 @@
-import styles from './TransactionException.module.css';
-import { ZERO_ADDRESS } from '../../../../../ambient-utils/constants';
-import DividerDark from '../../../../Global/DividerDark/DividerDark';
-import { useContext, useEffect } from 'react';
-import { TradeDataContext } from '../../../../../contexts/TradeDataContext';
-import TooltipComponent from '../../../../Global/TooltipComponent/TooltipComponent';
-import useCopyToClipboard from '../../../../../utils/hooks/useCopyToClipboard';
-import { AppStateContext } from '../../../../../contexts/AppStateContext';
-import { parseErrorMessage } from '../../../../../utils/TransactionError';
 import { useSwitchNetwork } from '@web3modal/ethers/react';
-import { CrocEnvContext } from '../../../../../contexts/CrocEnvContext';
+import { useContext, useEffect } from 'react';
+import { ZERO_ADDRESS } from '../../../../../ambient-utils/constants';
+import { AppStateContext } from '../../../../../contexts/AppStateContext';
+import { TradeDataContext } from '../../../../../contexts/TradeDataContext';
+import useCopyToClipboard from '../../../../../utils/hooks/useCopyToClipboard';
+import { parseErrorMessage } from '../../../../../utils/TransactionError';
+import DividerDark from '../../../../Global/DividerDark/DividerDark';
+import TooltipComponent from '../../../../Global/TooltipComponent/TooltipComponent';
+import styles from './TransactionException.module.css';
 
 interface propsIF {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,7 +30,9 @@ export default function TransactionException(props: propsIF) {
     }
     const rangeModuleActive = location.pathname.includes('/trade/pool');
     const { tokenA, tokenB, isTokenAPrimary } = useContext(TradeDataContext);
-    const { chainData } = useContext(CrocEnvContext);
+    const {
+        activeNetwork: { chainId },
+    } = useContext(AppStateContext);
     useEffect(() => {
         if (txError.reason === 'sending a transaction requires a signer') {
             location.reload();
@@ -40,7 +41,7 @@ export default function TransactionException(props: propsIF) {
             (txError.code === 'NETWORK_ERROR' && txError.event === 'changed')
         ) {
             console.log('caught network changed error, switching');
-            useSwitchNetwork().switchNetwork(Number(chainData.chainId));
+            useSwitchNetwork().switchNetwork(Number(chainId));
         }
     }, [txError]);
 

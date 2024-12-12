@@ -1,26 +1,23 @@
-// START: Import React and Dongles
-import { useState, useRef, useContext, useEffect } from 'react';
-import { FiExternalLink } from 'react-icons/fi';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { CiCircleMore } from 'react-icons/ci';
-// START: Import JSX Functional Components
+import { FiExternalLink } from 'react-icons/fi';
 
-// START: Import Local Files
-import styles from './TableMenus.module.css';
-import UseOnClickOutside from '../../../../../utils/hooks/useOnClickOutside';
-import useMediaQuery from '../../../../../utils/hooks/useMediaQuery';
 import { TransactionIF } from '../../../../../ambient-utils/types';
-import { CrocEnvContext } from '../../../../../contexts/CrocEnvContext';
-import { SidebarContext } from '../../../../../contexts/SidebarContext';
+import { AppStateContext } from '../../../../../contexts';
 import { RangeContext } from '../../../../../contexts/RangeContext';
-import {
-    useLinkGen,
-    linkGenMethodsIF,
-    limitParamsIF,
-} from '../../../../../utils/hooks/useLinkGen';
-import { TradeTableContext } from '../../../../../contexts/TradeTableContext';
-import { Chip } from '../../../../Form/Chip';
-import { FlexContainer } from '../../../../../styled/Common';
+import { SidebarContext } from '../../../../../contexts/SidebarContext';
 import { TradeDataContext } from '../../../../../contexts/TradeDataContext';
+import { TradeTableContext } from '../../../../../contexts/TradeTableContext';
+import { FlexContainer } from '../../../../../styled/Common';
+import {
+    limitParamsIF,
+    linkGenMethodsIF,
+    useLinkGen,
+} from '../../../../../utils/hooks/useLinkGen';
+import useMediaQuery from '../../../../../utils/hooks/useMediaQuery';
+import UseOnClickOutside from '../../../../../utils/hooks/useOnClickOutside';
+import { Chip } from '../../../../Form/Chip';
+import styles from './TableMenus.module.css';
 
 // interface for React functional component props
 interface propsIF {
@@ -42,8 +39,8 @@ export default function TransactionsMenu(props: propsIF) {
         positionHash,
     } = props;
     const {
-        chainData: { blockExplorer, chainId },
-    } = useContext(CrocEnvContext);
+        activeNetwork: { blockExplorer, chainId },
+    } = useContext(AppStateContext);
     const {
         setSimpleRangeWidth,
         setRangeTicksCopied,
@@ -259,11 +256,18 @@ export default function TransactionsMenu(props: propsIF) {
 
     const showViewButton =
         isOwnerActiveAccount &&
-        ['limitOrder', 'liqchange'].includes(tx.entityType);
+        ['limitOrder', 'liqchange'].includes(tx.entityType) &&
+        !['remove', 'recover', 'burn'].includes(tx.changeType);
+
+    const showExplorerButton = isOwnerActiveAccount && !showViewButton;
 
     const transactionsMenu = (
         <div className={styles.actions_menu}>
-            {showViewButton ? viewButton : copyButton}
+            {showExplorerButton
+                ? explorerButton
+                : showViewButton
+                  ? viewButton
+                  : copyButton}
         </div>
     );
 

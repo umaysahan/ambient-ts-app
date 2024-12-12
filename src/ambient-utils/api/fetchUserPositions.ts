@@ -1,28 +1,29 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { CrocEnv } from '@crocswap-libs/sdk';
+import { Provider } from 'ethers';
+import {
+    FetchAddrFn,
+    FetchContractDetailsFn,
+    TokenPriceFn,
+    fetchContractDetails,
+    fetchEnsAddress,
+    fetchTokenPrice,
+} from '../api';
 import { createNetworkSession } from '../constants/networks/createNetworkSession';
 import {
     SpotPriceFn,
+    filterLimitArray,
     getLimitOrderData,
     getPositionData,
     querySpotPrice,
 } from '../dataLayer';
-import { CrocEnv } from '@crocswap-libs/sdk';
-import { Provider } from 'ethers';
 import {
-    TokenPriceFn,
-    FetchContractDetailsFn,
-    FetchAddrFn,
-    fetchTokenPrice,
-    fetchContractDetails,
-    fetchEnsAddress,
-} from '../api';
-import {
-    TokenIF,
-    PositionIF,
-    PositionServerIF,
     LimitOrderIF,
     LimitOrderServerIF,
+    PositionIF,
+    PositionServerIF,
     RecordType,
+    TokenIF,
 } from '../types';
 // TODOJG move to types
 interface RecordRequestIF {
@@ -91,6 +92,7 @@ const decorateUserPositions = async ({
     cachedEnsResolve: FetchAddrFn;
 }) => {
     const skipENSFetch = true;
+    const forceOnchainLiqUpdate = userPositions.length < 30; // temporary solution to fix batch RPC call failure when user has a lot of positions
     if (recordType == RecordType.LimitOrder) {
         return await Promise.all(
             (userPositions as LimitOrderServerIF[]).map(
@@ -105,11 +107,17 @@ const decorateUserPositions = async ({
                         cachedQuerySpotPrice,
                         cachedTokenDetails,
                         cachedEnsResolve,
-                        skipENSFetch,
                     );
                 },
             ),
-        );
+        ).then((updatedLimitOrderStates) => {
+            if (updatedLimitOrderStates.length > 0) {
+                const filteredData = filterLimitArray(updatedLimitOrderStates);
+                return filteredData;
+            } else {
+                return [];
+            }
+        });
     } else {
         // default to 'PositionIF'
         return await Promise.all(
@@ -126,6 +134,7 @@ const decorateUserPositions = async ({
                         cachedTokenDetails,
                         cachedEnsResolve,
                         skipENSFetch,
+                        forceOnchainLiqUpdate,
                     );
                 },
             ),

@@ -1,14 +1,14 @@
 import { Suspense, memo, useEffect, useState } from 'react';
-import styles from './TokenIcon.module.css';
-import NoTokenIcon from '../NoTokenIcon/NoTokenIcon';
-import { IS_LOCAL_ENV, ZERO_ADDRESS } from '../../../ambient-utils/constants';
-import { TokenIF } from '../../../ambient-utils/types';
-import processLogoSrc from './processLogoSrc';
-import { DefaultTooltip } from '../StyledTooltip/StyledTooltip';
 import { useLocation } from 'react-router-dom';
+import { IS_LOCAL_ENV, ZERO_ADDRESS } from '../../../ambient-utils/constants';
 import fixCase, {
     letterCasings,
 } from '../../../ambient-utils/functions/fixCase';
+import { TokenIF } from '../../../ambient-utils/types';
+import NoTokenIcon from '../NoTokenIcon/NoTokenIcon';
+import { DefaultTooltip } from '../StyledTooltip/StyledTooltip';
+import processLogoSrc from './processLogoSrc';
+import styles from './TokenIcon.module.css';
 
 type TokenIconSize = 'xxs' | 'xs' | 's' | 'm' | 'l' | 'xl' | '2xl' | '3xl';
 
@@ -86,14 +86,18 @@ function TokenIcon(props: propsIF) {
     }, [src]);
 
     // fn to get a character to use in the `<NoTokenIcon />` element
-    function getTokenCharacter(tkn: TokenIF | undefined): string {
+    function getTokenCharacter(tkn: TokenIF | undefined, alt?: string): string {
         const DEFAULT_OUTPUT = '';
         // early return if no token data object is available
-        if (!tkn) return DEFAULT_OUTPUT;
+        if (!tkn && !alt) return DEFAULT_OUTPUT;
         // regex to identify whether a character is alphanumeric (case-insensitive)
         const alphanumericRegex = /[a-zA-Z0-9]/;
         // array of strings to use to isolate a character in order of preference
-        const characterSources: string[] = [tkn.symbol, tkn.name];
+        const characterSources: string[] = tkn
+            ? [tkn.symbol, tkn.name]
+            : alt
+              ? [alt]
+              : [];
         // join sources into a string for easier processing
         const characterSourcesAsStr: string = characterSources.join('');
         // iterate over characters in string to find the first alphanumeric
@@ -147,12 +151,9 @@ function TokenIcon(props: propsIF) {
 
     const noTokenIcon: JSX.Element = (
         <NoTokenIcon
-            tokenInitial={
-                token
-                    ? getTokenCharacter(token)
-                    : alt?.charAt(0).toUpperCase() || ''
-            }
+            tokenInitial={getTokenCharacter(token, alt) || ''}
             width={getIconWidth(size)}
+            isFutaList={token?.fromList?.includes('futa')}
         />
     );
 

@@ -1,5 +1,4 @@
 import styled from 'styled-components/macro';
-import backgroundImage from '../../../assets/images/backgrounds/tableInfoBg.png';
 
 // can be extracted to common
 
@@ -9,8 +8,6 @@ interface BoxContainerProps {
 }
 
 const MainSection = styled.section`
-    background: url(${backgroundImage}) no-repeat;
-
     height: 100%;
     padding: 8px;
 `;
@@ -115,17 +112,17 @@ const StyledTabContainer = styled.div`
 `;
 
 export {
-    MainSection,
     BoxContainer,
+    BoxInfoText,
+    DetailedBoxContainer,
     FeaturedBoxInfoContainer,
-    InfoHeader,
     FeaturedBoxInnerContainer,
     FlexCenter,
+    InfoHeader,
+    LinkText,
+    MainSection,
+    StyledTabContainer,
+    TabPlaceholder,
     TokenName,
     TokenSymbol,
-    BoxInfoText,
-    LinkText,
-    TabPlaceholder,
-    DetailedBoxContainer,
-    StyledTabContainer,
 };

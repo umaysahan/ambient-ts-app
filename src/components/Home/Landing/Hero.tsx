@@ -1,15 +1,23 @@
+import { useContext, useMemo } from 'react';
+import { heroItem } from '../../../assets/branding/types';
+import { BrandContext } from '../../../contexts/BrandContext';
 import { FlexContainer, Text } from '../../../styled/Common';
-import TradeNowButton from './TradeNowButton/TradeNowButton';
-import styles from './BackgroundImages.module.css';
 import { HeroContainer } from '../../../styled/Components/Home';
 import useMediaQuery from '../../../utils/hooks/useMediaQuery';
-import { useContext, useMemo } from 'react';
-import { BrandContext } from '../../../contexts/BrandContext';
-import { heroItem } from '../../../assets/branding/types';
+import styles from './BackgroundImages.module.css';
+import TradeNowButton from './TradeNowButton/TradeNowButton';
 
 export default function Hero() {
     const smallScreen: boolean = useMediaQuery('(max-width: 1200px)');
-    const { hero, platformName } = useContext(BrandContext);
+    const { platformName, cobrandingLogo } = useContext(BrandContext);
+
+    const hero: heroItem[] = cobrandingLogo
+        ? [
+              { content: 'ambient', processAs: 'text' },
+              { content: '×', processAs: 'separator' },
+              { content: cobrandingLogo, processAs: 'image' },
+          ]
+        : [{ content: 'ambient', processAs: 'text' }];
 
     // recognized slugs for background image CSS classes
     type cssSlugs = 'purple_waves' | 'stars';

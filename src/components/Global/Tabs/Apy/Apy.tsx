@@ -50,8 +50,8 @@ export default function Apy(props: ApyProps) {
                 <p
                     className={aprColor}
                     style={{
-                        fontSize: '24px',
-                        lineHeight: '30px',
+                        fontSize: fs ? fs : '24px',
+                        lineHeight: lh ? lh : '30px',
                         fontWeight: '100px',
                     }}
                 >

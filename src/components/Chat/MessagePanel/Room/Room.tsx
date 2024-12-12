@@ -7,9 +7,14 @@ import {
     useState,
 } from 'react';
 import { RiArrowDownSLine } from 'react-icons/ri';
-import { useTokens } from '../../../../App/hooks/useTokens';
+import {
+    getDefaultPairForChain,
+    ZERO_ADDRESS,
+} from '../../../../ambient-utils/constants';
 import { PoolIF, TokenIF } from '../../../../ambient-utils/types';
+import { AppStateContext } from '../../../../contexts';
 import { CrocEnvContext } from '../../../../contexts/CrocEnvContext';
+import { TokenContext } from '../../../../contexts/TokenContext';
 import { TradeDataContext } from '../../../../contexts/TradeDataContext';
 import { UserPreferenceContext } from '../../../../contexts/UserPreferenceContext';
 import Toggle from '../../../Form/Toggle';
@@ -28,10 +33,6 @@ import {
 } from '../../ChatUtils';
 import useChatApi from '../../Service/ChatApi';
 import styles from './Room.module.css';
-import {
-    getDefaultPairForChain,
-    ZERO_ADDRESS,
-} from '../../../../ambient-utils/constants';
 
 interface propsIF {
     selectedRoom: string;
@@ -94,15 +95,13 @@ export default function Room(props: propsIF) {
         }
     };
 
-    const {
-        chainData: { chainId },
-        topPools,
-    } = useContext(CrocEnvContext);
+    const { topPools } = useContext(CrocEnvContext);
 
-    const { getTokensByNameOrSymbol, getTokenByAddress } = useTokens(
-        chainId,
-        undefined,
-    );
+    const {
+        activeNetwork: { chainId },
+    } = useContext(AppStateContext);
+
+    const { tokens } = useContext(TokenContext);
 
     const processRoomList = async () => {
         if (!props.isChatOpen) return;
@@ -146,7 +145,7 @@ export default function Room(props: propsIF) {
             if (!found) {
                 newRoomList.push({
                     name: getRoomNameFromPool(pool),
-                    shownName: getRoomNameFromPool(pool) + ' ❤️',
+                    shownName: getRoomNameFromPool(pool),
                     base: pool.base.symbol,
                     quote: pool.quote.symbol,
                     isFavourite: true,
@@ -169,9 +168,10 @@ export default function Room(props: propsIF) {
                 baseToken.symbol,
                 quoteToken.symbol,
             );
-            currentPoolRoomObj.shownName =
-                getRoomNameFromBaseQuote(baseToken.symbol, quoteToken.symbol) +
-                ' 📈';
+            currentPoolRoomObj.shownName = getRoomNameFromBaseQuote(
+                baseToken.symbol,
+                quoteToken.symbol,
+            );
             newRoomList.push(currentPoolRoomObj);
         }
 
@@ -186,7 +186,7 @@ export default function Room(props: propsIF) {
             if (!newRoomList.some((e) => e.name == getRoomNameFromPool(pool))) {
                 newRoomList.push({
                     name: getRoomNameFromPool(pool),
-                    shownName: getRoomNameFromPool(pool) + ' 🏊',
+                    shownName: getRoomNameFromPool(pool),
                     base: pool.base.symbol,
                     quote: pool.quote.symbol,
                 });
@@ -200,6 +200,7 @@ export default function Room(props: propsIF) {
     useEffect(() => {
         processRoomList();
         handlePoolRedirect(props.room);
+        console.log(props.selectedRoom);
     }, [
         isCurrentPool,
         baseToken.symbol,
@@ -256,9 +257,13 @@ export default function Room(props: propsIF) {
         if (room && room.base && room.quote) {
             const foundBase =
                 room.base === 'ETH'
-                    ? [getTokenByAddress(ZERO_ADDRESS) || dfltTokenA]
-                    : getTokensByNameOrSymbol(room.base, true);
-            const foundQuote = getTokensByNameOrSymbol(room.quote, true);
+                    ? [tokens.getTokenByAddress(ZERO_ADDRESS) || dfltTokenA]
+                    : tokens.getTokensByNameOrSymbol(room.base, chainId, true);
+            const foundQuote = tokens.getTokensByNameOrSymbol(
+                room.quote,
+                chainId,
+                true,
+            );
 
             if (foundBase.length > 0 && foundQuote.length > 0) {
                 const base = foundBase[0];

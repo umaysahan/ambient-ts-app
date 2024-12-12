@@ -8,10 +8,17 @@ export const CROCODILE_LABS_LINKS = [
     'https://scrollscan.com/',
     'https://blastscan.io/',
     'https://etherscan.io/',
+    'https://discord.gg/ambient-finance/',
+];
+
+export const CHAT_WHITELISTED_REGEX: RegExp[] = [
+    /^(https:\/\/)?(www\.)?([a-zA-Z0-9-]+\.)?ambient\.finance$/,
+    /^(https:\/\/)?(www\.)?([a-zA-Z0-9-]+\.)?futa\.finance$/,
 ];
 
 export const LS_USER_VERIFY_TOKEN = 'CHAT_user_verify';
 export const LS_USER_NON_VERIFIED_MESSAGES = 'CHAT_non_verified_messages';
+export const LS_TUTO_FUTA_COMMENTS = 'tuto_futa_comments';
 
 export const AVATAR_TYPES = {
     JAZZ: '_jazz_',
@@ -38,3 +45,10 @@ export const ALLOW_REPLIES =
     import.meta.env.VITE_CHAT_DISABLE_REPLIES || BASIC_CHAT_MODE ? false : true;
 export const ALLOW_AUTH =
     import.meta.env.VITE_CHAT_DISABLE_AUTH || BASIC_CHAT_MODE ? false : true;
+
+export const REGEX_EMOJI =
+    /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/;
+
+export const REGEX_NOT_EMOJI = /[a-zA-Z0-9!@#$%^&*(),.?":{}|<>]/;
+
+export const CUSTOM_EMOJI_BLACKLIST_CHARACTERS = ['(', ')'];

@@ -1,11 +1,10 @@
 import { CrocEnv } from '@crocswap-libs/sdk';
-import { GCGO_OVERRIDE_URL } from '../constants';
+import { Provider } from 'ethers';
+import { getTransactionData, SpotPriceFn } from '../dataLayer/functions';
 import { TokenIF, TransactionServerIF } from '../types';
 import { FetchAddrFn } from './fetchAddress';
 import { FetchContractDetailsFn } from './fetchContractDetails';
 import { TokenPriceFn } from './fetchTokenPrice';
-import { getTransactionData, SpotPriceFn } from '../dataLayer/functions';
-import { Provider } from 'ethers';
 
 interface argsIF {
     tokenList: TokenIF[];
@@ -17,8 +16,9 @@ interface argsIF {
     page?: number;
     period?: number;
     time?: number;
+    timeBefore?: number;
     crocEnv: CrocEnv;
-    graphCacheUrl: string;
+    GCGO_URL: string;
     provider: Provider;
     cachedFetchTokenPrice: TokenPriceFn;
     cachedQuerySpotPrice: SpotPriceFn;
@@ -36,8 +36,9 @@ export const fetchPoolRecentChanges = (args: argsIF) => {
         n,
         period,
         time,
+        timeBefore,
         crocEnv,
-        graphCacheUrl,
+        GCGO_URL,
         provider,
         cachedFetchTokenPrice,
         cachedQuerySpotPrice,
@@ -45,9 +46,7 @@ export const fetchPoolRecentChanges = (args: argsIF) => {
         cachedEnsResolve,
     } = args;
 
-    const poolRecentChangesCacheEndpoint = GCGO_OVERRIDE_URL
-        ? GCGO_OVERRIDE_URL + '/pool_txs?'
-        : graphCacheUrl + '/pool_txs?';
+    const poolRecentChangesCacheEndpoint = GCGO_URL + '/pool_txs?';
 
     const poolChanges = fetch(
         period && time
@@ -61,28 +60,38 @@ export const fetchPoolRecentChanges = (args: argsIF) => {
                       period: period.toString(),
                       time: time.toString(),
                   })
-            : poolRecentChangesCacheEndpoint +
-                  new URLSearchParams({
-                      base: base.toLowerCase(),
-                      quote: quote.toLowerCase(),
-                      poolIdx: poolIdx.toString(),
-                      chainId: chainId,
-                      n: n ? n.toString() : '',
-                      // positive integer	(Optional.) If n and page are provided, query returns a page of results with at most n entries.
-                      // page: page ? page.toString() : '', // nonnegative integer	(Optional.) If n and page are provided, query returns the page-th page of results. Page numbers are 0-indexed.
-                  }),
+            : timeBefore
+              ? poolRecentChangesCacheEndpoint +
+                new URLSearchParams({
+                    base: base.toLowerCase(),
+                    quote: quote.toLowerCase(),
+                    poolIdx: poolIdx.toString(),
+                    chainId: chainId,
+                    n: n ? n.toString() : '',
+                    timeBefore: timeBefore.toString(),
+                })
+              : poolRecentChangesCacheEndpoint +
+                new URLSearchParams({
+                    base: base.toLowerCase(),
+                    quote: quote.toLowerCase(),
+                    poolIdx: poolIdx.toString(),
+                    chainId: chainId,
+                    n: n ? n.toString() : '',
+                    // positive integer	(Optional.) If n and page are provided, query returns a page of results with at most n entries.
+                    // page: page ? page.toString() : '', // nonnegative integer	(Optional.) If n and page are provided, query returns the page-th page of results. Page numbers are 0-indexed.
+                }),
     )
         .then((response) => response?.json())
         .then((json) => {
-            const userTransactions = json?.data;
+            const poolTransactions = json?.data;
 
-            if (!userTransactions) {
+            if (!poolTransactions) {
                 return [];
             }
 
             const skipENSFetch = true;
             return Promise.all(
-                userTransactions.map((tx: TransactionServerIF) => {
+                poolTransactions.map((tx: TransactionServerIF) => {
                     return getTransactionData(
                         tx,
                         tokenList,

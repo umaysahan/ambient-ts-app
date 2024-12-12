@@ -1,23 +1,23 @@
 import { useContext } from 'react';
-import { LimitOrderIF } from '../../../../ambient-utils/types';
-import { CrocEnvContext } from '../../../../contexts/CrocEnvContext';
-import { TradeTableContext } from '../../../../contexts/TradeTableContext';
-import {
-    useLinkGen,
-    linkGenMethodsIF,
-    limitParamsIF,
-} from '../../../../utils/hooks/useLinkGen';
 import {
     getFormattedNumber,
     getUnicodeCharacter,
 } from '../../../../ambient-utils/dataLayer';
+import { LimitOrderIF } from '../../../../ambient-utils/types';
+import { AppStateContext } from '../../../../contexts';
+import { SidebarContext } from '../../../../contexts/SidebarContext';
+import { TradeDataContext } from '../../../../contexts/TradeDataContext';
+import { TradeTableContext } from '../../../../contexts/TradeTableContext';
 import { FlexContainer, GridContainer, Text } from '../../../../styled/Common';
 import {
     Results,
     ResultsContainer,
 } from '../../../../styled/Components/Sidebar';
-import { TradeDataContext } from '../../../../contexts/TradeDataContext';
-import { SidebarContext } from '../../../../contexts/SidebarContext';
+import {
+    limitParamsIF,
+    linkGenMethodsIF,
+    useLinkGen,
+} from '../../../../utils/hooks/useLinkGen';
 
 interface propsIF {
     searchedLimitOrders: LimitOrderIF[];
@@ -76,8 +76,8 @@ export default function OrdersSearchResults(props: propsIF) {
         useContext(SidebarContext);
 
     const {
-        chainData: { chainId },
-    } = useContext(CrocEnvContext);
+        activeNetwork: { chainId },
+    } = useContext(AppStateContext);
     const {
         setCurrentLimitOrderActive,
         setShowAllData,

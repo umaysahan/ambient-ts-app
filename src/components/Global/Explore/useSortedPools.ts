@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { PoolDataIF } from '../../../contexts/ExploreContext';
 import { sortDirections } from '../../../ambient-utils/types';
+import { PoolDataIF } from '../../../contexts/ExploreContext';
 
 export type sortType =
     | 'price'
@@ -8,6 +8,7 @@ export type sortType =
     | '24h vol.'
     | 'apr'
     | '24h price δ'
+    | 'change'
     | null;
 type sortableKeysType = 'priceChange' | 'tvl' | 'volume' | 'apr';
 
@@ -49,6 +50,9 @@ export const useSortedPools = (
                 output = sort('apr');
                 break;
             case '24h price δ':
+                output = sort('priceChange');
+                break;
+            case 'change':
                 output = sort('priceChange');
                 break;
             case 'tvl':

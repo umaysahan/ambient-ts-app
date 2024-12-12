@@ -1,17 +1,19 @@
-import { TokenIF } from '../../../../../ambient-utils/types';
-import styles from './WalletCard.module.css';
+import { toDisplayQty } from '@crocswap-libs/sdk';
 import { useContext, useEffect, useState } from 'react';
-import { ZERO_ADDRESS } from '../../../../../ambient-utils/constants';
-import { DefaultTooltip } from '../../../StyledTooltip/StyledTooltip';
-import { CrocEnvContext } from '../../../../../contexts/CrocEnvContext';
-import { TokenContext } from '../../../../../contexts/TokenContext';
 import { TokenPriceFn } from '../../../../../ambient-utils/api';
-import TokenIcon from '../../../TokenIcon/TokenIcon';
+import { ZERO_ADDRESS } from '../../../../../ambient-utils/constants';
 import {
     getFormattedNumber,
     uriToHttp,
 } from '../../../../../ambient-utils/dataLayer';
-import { toDisplayQty } from '@crocswap-libs/sdk';
+import { TokenIF } from '../../../../../ambient-utils/types';
+import { AppStateContext } from '../../../../../contexts';
+import { CrocEnvContext } from '../../../../../contexts/CrocEnvContext';
+import { TokenContext } from '../../../../../contexts/TokenContext';
+import useMediaQuery from '../../../../../utils/hooks/useMediaQuery';
+import { DefaultTooltip } from '../../../StyledTooltip/StyledTooltip';
+import TokenIcon from '../../../TokenIcon/TokenIcon';
+import styles from './WalletCard.module.css';
 
 interface propsIF {
     token: TokenIF;
@@ -23,10 +25,13 @@ export default function WalletCard(props: propsIF) {
     const {
         tokens: { getTokenByAddress },
     } = useContext(TokenContext);
+    const { crocEnv } = useContext(CrocEnvContext);
+
     const {
-        chainData: { chainId },
-        crocEnv,
-    } = useContext(CrocEnvContext);
+        activeNetwork: { chainId },
+    } = useContext(AppStateContext);
+
+    const isMobile = useMediaQuery('(max-width: 800px)');
 
     const tokenMapKey = token?.address?.toLowerCase() + '_' + chainId;
 
@@ -107,13 +112,15 @@ export default function WalletCard(props: propsIF) {
     const tokenInfo = (
         <div className={styles.token_info}>
             {iconAndSymbolWithTooltip}
-            <p>
-                {tokenFromMap?.name
-                    ? tokenFromMap?.name
-                    : token?.name
-                    ? token?.name
-                    : '???'}
-            </p>
+            {!isMobile && (
+                <p>
+                    {tokenFromMap?.name
+                        ? tokenFromMap?.name
+                        : token?.name
+                          ? token?.name
+                          : '???'}
+                </p>
+            )}
         </div>
     );
 

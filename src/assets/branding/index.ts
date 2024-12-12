@@ -1,6 +1,11 @@
-export { defaultBrandAssets } from './defaultBrandAssets';
 export { ambientProductionBrandAssets } from './ambientProductionBrandAssets';
 export { ambientTestnetBrandAssets } from './ambientTestnetBrandAssets';
+export { baseSepoliaBrandAssets } from './baseSepoliaBrandAssets';
 export { blastBrandAssets } from './blastBrandAssets';
-export { scrollBrandAssets } from './scrollBrandAssets';
+export { defaultBrandAssets } from './defaultBrandAssets';
 export { futaBrandAssets } from './futaBrandAssets';
+export { plumeSepoliaBrandAssets } from './plumeSepoliaBrandAssets';
+export { sampleBrandAssets } from './sampleBrandAssets';
+export { scrollBrandAssets } from './scrollBrandAssets';
+export { swellBrandAssets } from './swellBrandAssets';
+export { swellSepoliaBrandAssets } from './swellSepoliaBrandAssets';

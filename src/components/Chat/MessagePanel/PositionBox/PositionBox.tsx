@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { motion } from 'framer-motion';
 import {
     Dispatch,
     SetStateAction,
@@ -9,18 +10,15 @@ import {
 } from 'react';
 import { HiOutlineExternalLink } from 'react-icons/hi';
 import {
-    trimString,
     getFormattedNumber,
     getUnicodeCharacter,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    getChainExplorer,
+    trimString,
 } from '../../../../ambient-utils/dataLayer';
 import { PositionIF, TransactionIF } from '../../../../ambient-utils/types';
-import styles from './PositionBox.module.css';
-import { motion } from 'framer-motion';
+import { AppStateContext } from '../../../../contexts';
 import { GraphDataContext } from '../../../../contexts/GraphDataContext';
 import { TradeDataContext } from '../../../../contexts/TradeDataContext';
-import { CrocEnvContext } from '../../../../contexts/CrocEnvContext';
+import styles from './PositionBox.module.css';
 
 interface propsIF {
     message: string;
@@ -34,9 +32,8 @@ interface propsIF {
 
 export default function PositionBox(props: propsIF) {
     const {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        chainData: { blockExplorer, chainId },
-    } = useContext(CrocEnvContext);
+        activeNetwork: { blockExplorer },
+    } = useContext(AppStateContext);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isPoolPriceChangePositive] = useState<boolean>(false);
@@ -266,7 +263,7 @@ that will merged manually
     }
 
     function handleOpenExplorer() {
-        // chainData may be changed!!
+        // active network may be changed!!
         if (sPositions === undefined && position !== undefined) {
             const hashMsg = message
                 .split(' ')

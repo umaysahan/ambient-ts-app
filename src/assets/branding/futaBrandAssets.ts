@@ -1,12 +1,13 @@
-import { brandIF } from './types';
 import large from '../images/logos/large.svg';
+import { brandIF } from './types';
 
 export const futaBrandAssets: brandIF = {
     networks: {
         // ethereum sepolia
         '0xaa36a7': {
-            color: 'orange_dark',
-            hero: [{ content: 'futa', processAs: 'text' }],
+            // first value in array is default color scheme
+            color: ['futa_dark', 'purple_dark', 'purple_light'],
+            premiumColor: [],
         },
     },
     platformName: 'futa',

@@ -1,19 +1,15 @@
+import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import React, {
-    useEffect,
-    useRef,
     Dispatch,
     SetStateAction,
     useContext,
+    useEffect,
+    useRef,
 } from 'react';
-import { AnimatePresence, useAnimation } from 'framer-motion';
+import styles from './ActivityIndicator.module.css';
 
-import {
-    ActivityIndicatorDiv,
-    Circle,
-    CircleButton,
-    Ring,
-} from './ActivityIndicator.styles';
 import { AppStateContext } from '../../../../contexts/AppStateContext';
+import { BrandContext } from '../../../../contexts/BrandContext';
 
 interface AcitivtyIndicatorProps {
     value: number;
@@ -31,6 +27,8 @@ const animStates = {
 };
 const ActivityIndicator = (props: AcitivtyIndicatorProps) => {
     const { appHeaderDropdown } = useContext(AppStateContext);
+    const { platformName } = useContext(BrandContext);
+
     const controls = useAnimation();
     const isFirstRun = useRef(true);
 
@@ -55,17 +53,25 @@ const ActivityIndicator = (props: AcitivtyIndicatorProps) => {
         } else appHeaderDropdown.setIsActive(false);
     };
 
+    const isFuta = ['futa'].includes(platformName);
+
     const pendingCircle = (
-        <Circle onClick={toggleNotificationCenter}>
-            <Ring />
-        </Circle>
+        <button
+            className={`${styles.circleContainer}${isFuta ? styles.circleContainerFuta : ''}`}
+            onClick={toggleNotificationCenter}
+        >
+            <span
+                className={`${styles.ring}${isFuta ? styles.ringFuta : ''}`}
+            />
+        </button>
     );
 
     if (pending) return pendingCircle;
     return (
         <AnimatePresence>
             {value > 0 && (
-                <CircleButton
+                <motion.button
+                    className={styles.circleButton}
                     initial={false}
                     exit='hidden'
                     animate='visible'
@@ -75,7 +81,9 @@ const ActivityIndicator = (props: AcitivtyIndicatorProps) => {
                     tabIndex={0}
                     aria-label='Notification center'
                 >
-                    <ActivityIndicatorDiv
+                    <motion.div
+                        className={styles.activityIndicatorDiv}
+                        style={{ borderRadius: isFuta ? '0' : '50%' }}
                         animate={controls}
                         whileHover='hover'
                         whileTap='pressed'
@@ -88,8 +96,8 @@ const ActivityIndicator = (props: AcitivtyIndicatorProps) => {
                         >
                             {value}
                         </span>
-                    </ActivityIndicatorDiv>
-                </CircleButton>
+                    </motion.div>
+                </motion.button>
             )}
         </AnimatePresence>
     );

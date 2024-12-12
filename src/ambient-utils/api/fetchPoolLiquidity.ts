@@ -1,20 +1,21 @@
 import { CrocEnv, tickToPrice, toDisplayPrice } from '@crocswap-libs/sdk';
-import { GCGO_OVERRIDE_URL } from '../constants';
+import { SpotPriceFn } from '../dataLayer';
 import { TokenPriceFn } from './fetchTokenPrice';
 
 export const fetchPoolLiquidity = async (
     chainId: string,
     base: string,
+    baseTokenDecimals: number,
     quote: string,
+    quoteTokenDecimals: number,
     poolIdx: number,
     crocEnv: CrocEnv,
-    graphCacheUrl: string,
+    GCGO_URL: string,
     cachedFetchTokenPrice: TokenPriceFn,
+    cachedQuerySpotTick: SpotPriceFn,
+    currentPoolPriceTick?: number | undefined,
 ): Promise<LiquidityDataIF | undefined> => {
-    const poolLiquidityCacheEndpoint = GCGO_OVERRIDE_URL
-        ? GCGO_OVERRIDE_URL + '/pool_liq_curve?'
-        : graphCacheUrl + '/pool_liq_curve?';
-
+    const poolLiquidityCacheEndpoint = GCGO_URL + '/pool_liq_curve?';
     return fetch(
         poolLiquidityCacheEndpoint +
             new URLSearchParams({
@@ -33,11 +34,15 @@ export const fetchPoolLiquidity = async (
             return await expandLiquidityData(
                 bumps,
                 base,
+                baseTokenDecimals,
                 quote,
+                quoteTokenDecimals,
                 poolIdx,
                 chainId,
                 crocEnv,
                 cachedFetchTokenPrice,
+                cachedQuerySpotTick,
+                currentPoolPriceTick,
             );
         });
 };
@@ -45,14 +50,31 @@ export const fetchPoolLiquidity = async (
 async function expandLiquidityData(
     liq: LiquidityCurveServerIF,
     base: string,
+    baseTokenDecimals: number,
     quote: string,
+    quoteTokenDecimals: number,
     poolIdx: number,
     chainId: string,
     crocEnv: CrocEnv,
     cachedFetchTokenPrice: TokenPriceFn,
+    cachedQuerySpotTick: SpotPriceFn,
+    currentPoolPriceTick?: number | undefined,
 ): Promise<LiquidityDataIF> {
-    const pool = crocEnv.pool(base, quote);
-    const curveTick = pool.spotTick();
+    // const pool = crocEnv.pool(base, quote);
+    const everyOneMinute = Math.floor(Date.now() / 60000);
+
+    let curveTick: number;
+    if (currentPoolPriceTick) {
+        curveTick = currentPoolPriceTick;
+    } else {
+        curveTick = await cachedQuerySpotTick(
+            crocEnv,
+            base,
+            quote,
+            chainId,
+            everyOneMinute,
+        );
+    }
 
     const basePricePromise = cachedFetchTokenPrice(base, chainId, crocEnv);
     const quotePricePromise = cachedFetchTokenPrice(quote, chainId, crocEnv);
@@ -62,15 +84,15 @@ async function expandLiquidityData(
 
     const ranges = bumpsToRanges(
         liq,
-        await curveTick,
-        await pool.baseDecimals,
-        await pool.quoteDecimals,
+        curveTick,
+        baseTokenDecimals,
+        quoteTokenDecimals,
         basePrice,
         quotePrice,
     );
 
     return {
-        currentTick: await curveTick,
+        currentTick: curveTick,
         ranges: ranges,
         curveState: {
             base: base,

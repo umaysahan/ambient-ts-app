@@ -1,39 +1,32 @@
-// START: Import React and Dongles
 import {
-    useState,
-    useRef,
-    useContext,
     ChangeEvent,
     KeyboardEvent,
     memo,
+    useContext,
+    useRef,
+    useState,
 } from 'react';
 import { BiSearch } from 'react-icons/bi';
 
-// START: Import JSX Elements
-import SidebarAccordion from './SidebarAccordion';
-import TopPools from '../../../components/Global/Sidebar/TopPools';
 import FavoritePools from '../../../components/Global/Sidebar/FavoritePools';
-import SidebarRangePositions from '../../../components/Global/Sidebar/SidebarRangePositions/SidebarRangePositions';
 import SidebarLimitOrders from '../../../components/Global/Sidebar/SidebarLimitOrders/SidebarLimitOrders';
+import SidebarRangePositions from '../../../components/Global/Sidebar/SidebarRangePositions/SidebarRangePositions';
 import SidebarRecentTransactions from '../../../components/Global/Sidebar/SidebarRecentTransactions/SidebarRecentTransactions';
+import TopPools from '../../../components/Global/Sidebar/TopPools';
+import SidebarAccordion from './SidebarAccordion';
 
-// START: Import Local Files
-import SidebarSearchResults from './SidebarSearchResults/SidebarSearchResults';
 import { MdClose } from 'react-icons/md';
+import SidebarSearchResults from './SidebarSearchResults/SidebarSearchResults';
 
-// import closeSidebarImage from '../../../assets/images/sidebarImages/closeSidebar.svg';
 import { AiFillLock, AiFillUnlock } from 'react-icons/ai';
-import { BsChevronExpand, BsChevronContract } from 'react-icons/bs';
+import { BsChevronContract, BsChevronExpand } from 'react-icons/bs';
 import RecentPools from '../../../components/Global/Sidebar/RecentPools';
-import {
-    useSidebarSearch,
-    sidebarSearchIF,
-} from '../../hooks/useSidebarSearch';
-import { SidebarContext } from '../../../contexts/SidebarContext';
-import { CrocEnvContext } from '../../../contexts/CrocEnvContext';
-import { TokenContext } from '../../../contexts/TokenContext';
-import { CachedDataContext } from '../../../contexts/CachedDataContext';
 import { DefaultTooltip } from '../../../components/Global/StyledTooltip/StyledTooltip';
+import { AppStateContext } from '../../../contexts/AppStateContext';
+import { CachedDataContext } from '../../../contexts/CachedDataContext';
+import { GraphDataContext } from '../../../contexts/GraphDataContext';
+import { SidebarContext } from '../../../contexts/SidebarContext';
+import { TokenContext } from '../../../contexts/TokenContext';
 import { FlexContainer } from '../../../styled/Common';
 import {
     ContentContainer,
@@ -48,22 +41,24 @@ import {
     TopPoolsIcon,
     TransactionsIcon,
 } from '../../../styled/Components/Sidebar';
-import { GraphDataContext } from '../../../contexts/GraphDataContext';
+import {
+    sidebarSearchIF,
+    useSidebarSearch,
+} from '../../hooks/useSidebarSearch';
 
 function Sidebar() {
+    const {
+        activeNetwork: { chainId },
+    } = useContext(AppStateContext);
     const { sidebar, hideOnMobile } = useContext(SidebarContext);
-
-    const { cachedPoolStatsFetch, cachedFetchTokenPrice } =
-        useContext(CachedDataContext);
-    const { chainData: chainData } = useContext(CrocEnvContext);
+    const { cachedQuerySpotPrice } = useContext(CachedDataContext);
     const { tokens } = useContext(TokenContext);
-
     const { positionsByUser, limitOrdersByUser, transactionsByUser } =
         useContext(GraphDataContext);
 
     // TODO: can pull into GraphDataContext
     const filterFn = <T extends { chainId: string }>(x: T) =>
-        x.chainId === chainData.chainId;
+        x.chainId === chainId;
 
     const _positionsByUser = positionsByUser.positions.filter(filterFn);
     const _txsByUser = transactionsByUser.changes.filter(filterFn);
@@ -230,8 +225,8 @@ function Sidebar() {
                                 isLocked
                                     ? 'Sidebar locked'
                                     : sidebar.isOpen
-                                    ? 'Close Sidebar'
-                                    : 'Open Sidebar'
+                                      ? 'Close Sidebar'
+                                      : 'Open Sidebar'
                             }
                         >
                             <svg
@@ -281,12 +276,7 @@ function Sidebar() {
             <SidebarAccordion
                 name='Top Pools'
                 icon={<TopPoolsIcon open={sidebar.isOpen} size={20} />}
-                data={
-                    <TopPools
-                        cachedPoolStatsFetch={cachedPoolStatsFetch}
-                        cachedFetchTokenPrice={cachedFetchTokenPrice}
-                    />
-                }
+                data={<TopPools cachedQuerySpotPrice={cachedQuerySpotPrice} />}
                 sidebar={sidebar}
                 shouldDisplayContentWhenUserNotLoggedIn={true}
                 openAllDefault={openAllDefault}
@@ -297,8 +287,7 @@ function Sidebar() {
                 icon={<FavoritePoolsIcon open={sidebar.isOpen} size={20} />}
                 data={
                     <FavoritePools
-                        cachedPoolStatsFetch={cachedPoolStatsFetch}
-                        cachedFetchTokenPrice={cachedFetchTokenPrice}
+                        cachedQuerySpotPrice={cachedQuerySpotPrice}
                     />
                 }
                 sidebar={sidebar}
@@ -310,10 +299,7 @@ function Sidebar() {
                 name='Recent Pools'
                 icon={<RecentPoolsIcon open={sidebar.isOpen} size={20} />}
                 data={
-                    <RecentPools
-                        cachedPoolStatsFetch={cachedPoolStatsFetch}
-                        cachedFetchTokenPrice={cachedFetchTokenPrice}
-                    />
+                    <RecentPools cachedQuerySpotPrice={cachedQuerySpotPrice} />
                 }
                 sidebar={sidebar}
                 shouldDisplayContentWhenUserNotLoggedIn={true}
@@ -385,11 +371,7 @@ function Sidebar() {
                 >
                     {searchContainerDisplay}
                     {searchData.isInputValid && sidebar.isOpen ? (
-                        <SidebarSearchResults
-                            searchData={searchData}
-                            cachedPoolStatsFetch={cachedPoolStatsFetch}
-                            cachedFetchTokenPrice={cachedFetchTokenPrice}
-                        />
+                        <SidebarSearchResults searchData={searchData} />
                     ) : (
                         regularSidebarDisplay
                     )}

@@ -28,6 +28,16 @@ const NFTBannerAccountContainer = styled.div<{
     background: #0d1117;
 
     z-index: 9999999;
+
+    @media (max-width: 768px) {
+        border: none;
+        position: static;
+        transform: none;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
 `;
 
 const NFTBannerHeader = styled.div`
@@ -111,8 +121,8 @@ const NFTImg = styled.img<{
             selectedNFT
                 ? '#7bede4'
                 : selectedThumbnail
-                ? '#ff9800'
-                : 'transparent'};
+                  ? '#ff9800'
+                  : 'transparent'};
     border-radius: 8px;
 
     width: ${({ isMobile }) => (isMobile ? '20vw' : '75px')};
@@ -382,26 +392,26 @@ const HeaderText = styled.div<{ fontSize?: string }>`
 `;
 
 export {
+    CheckBoxContainer,
+    DropDownContainer,
+    DropDownHeader,
+    DropDownList,
+    DropDownListContainer,
+    HeaderText,
+    IconContainer,
+    LabelSettingsArrow,
+    ListItem,
     NFTBannerAccountContainer,
+    NFTBannerFilter,
+    NFTBannerFooter,
     NFTBannerHeader,
     NFTDisplay,
-    NFTImgContainer,
-    CheckBoxContainer,
-    DropDownList,
-    NFTBannerFilter,
-    DropDownListContainer,
-    ListItem,
-    DropDownHeader,
-    LabelSettingsArrow,
-    DropDownContainer,
-    NFTBannerFooter,
-    SaveButton,
+    NFTHeaderSettings,
     NFTImg,
+    NFTImgContainer,
+    SaveButton,
+    ScrollableContainer,
+    SelectedJazzIcon,
     SelectedNFTImg,
     SelectedNftCotainer,
-    NFTHeaderSettings,
-    SelectedJazzIcon,
-    IconContainer,
-    ScrollableContainer,
-    HeaderText,
 };

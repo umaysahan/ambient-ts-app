@@ -1,25 +1,26 @@
 import {
+    Dispatch,
+    memo,
+    MutableRefObject,
+    SetStateAction,
+    useContext,
     useEffect,
     useRef,
-    useContext,
-    memo,
-    Dispatch,
-    SetStateAction,
 } from 'react';
 import {
     PositionIF,
     RangeModalAction,
 } from '../../../../../ambient-utils/types';
+import { AppStateContext } from '../../../../../contexts/AppStateContext';
+import { CrocEnvContext } from '../../../../../contexts/CrocEnvContext';
+import { RangeContext } from '../../../../../contexts/RangeContext';
+import { TradeTableContext } from '../../../../../contexts/TradeTableContext';
+import { UserDataContext } from '../../../../../contexts/UserDataContext';
+import { RangeRow as RangeRowStyled } from '../../../../../styled/Components/TransactionTable';
+import useCopyToClipboard from '../../../../../utils/hooks/useCopyToClipboard';
 import { useProcessRange } from '../../../../../utils/hooks/useProcessRange';
 import RangesMenu from '../../../../Global/Tabs/TableMenu/TableMenuComponents/RangesMenu';
-import useCopyToClipboard from '../../../../../utils/hooks/useCopyToClipboard';
 import rangeRowConstants from '../rangeRowConstants';
-import { AppStateContext } from '../../../../../contexts/AppStateContext';
-import { TradeTableContext } from '../../../../../contexts/TradeTableContext';
-import { RangeContext } from '../../../../../contexts/RangeContext';
-import { RangeRow as RangeRowStyled } from '../../../../../styled/Components/TransactionTable';
-import { UserDataContext } from '../../../../../contexts/UserDataContext';
-import { CrocEnvContext } from '../../../../../contexts/CrocEnvContext';
 
 interface propsIF {
     position: PositionIF;
@@ -30,6 +31,7 @@ interface propsIF {
     openDetailsModal: () => void;
     openActionModal: () => void;
     setRangeModalAction: Dispatch<SetStateAction<RangeModalAction>>;
+    observedRowRef: MutableRefObject<HTMLDivElement | null> | undefined;
 }
 
 function RangesRow(props: propsIF) {
@@ -42,6 +44,7 @@ function RangesRow(props: propsIF) {
         openDetailsModal,
         openActionModal,
         setRangeModalAction,
+        observedRowRef,
     } = props;
     const {
         snackbar: { open: openSnackbar },
@@ -225,13 +228,13 @@ function RangesRow(props: propsIF) {
         baseQtyDisplayWithTooltip,
         quoteQtyDisplayWithTooltip,
         rangeTimeWithTooltip,
-        txIdColumnComponent,
         fullScreenMinDisplay,
         fullScreenMaxDisplay,
         priceDisplay,
         tokenValues,
         apyDisplay,
         rangeDisplay,
+        hiddenIDColumn,
     } = rangeRowConstants(rangeRowConstantsProps);
 
     return (
@@ -249,17 +252,17 @@ function RangesRow(props: propsIF) {
                 onClick={openDetailsModal}
                 id={positionDomId}
                 ref={currentPositionActive ? activePositionRef : null}
+                data-type='infinite-scroll-row'
             >
+                {hiddenIDColumn}
                 {tableView === 'large' && rankingOrNull}
                 {tableView === 'large' && rangeTimeWithTooltip}
                 {isAccountView && tokenPair}
                 {!isLeaderboard && tableView === 'large' && (
                     <div>{IDWithTooltip}</div>
                 )}
-                {tableView === 'large' && !isAccountView && (
-                    <div>{walletWithTooltip}</div>
-                )}
-                {tableView !== 'large' && txIdColumnComponent}
+                {!isAccountView && walletWithTooltip}
+                {tableView !== 'small' && isAccountView && IDWithTooltip}
                 {tableView === 'large' && fullScreenMinDisplay}
                 {tableView === 'large' && fullScreenMaxDisplay}
                 {tableView === 'medium' && priceDisplay}
@@ -269,7 +272,7 @@ function RangesRow(props: propsIF) {
                 {tableView === 'medium' && tokenValues}
                 {apyDisplay}
                 {rangeDisplay}
-                <div data-label='menu'>
+                <div data-label='menu' ref={observedRowRef}>
                     <RangesMenu
                         {...rangeMenuProps}
                         handleWalletLinkClick={handleWalletLinkClick}

@@ -11,7 +11,7 @@ export interface PoolStatIF {
     poolFees24h?: string | undefined;
     poolApy?: string;
     apr?: string | undefined;
-
+    poolAmbientAprEstimate: number | undefined;
     poolPriceChangePercent?: string;
     isPoolPriceChangePositive: boolean;
 
@@ -32,4 +32,31 @@ export interface PoolStatIF {
 
     baseFdvUsd?: number;
     quoteFdvUsd?: number;
+}
+
+export interface SinglePoolDataIF {
+    base: string;
+    baseFees: number;
+    baseTvl: number;
+    baseVolume: number;
+    chainId: string;
+    events: number;
+    feeRate: number;
+    initTime: number;
+    lastPriceIndic: number;
+    lastPriceLiq: number;
+    lastPriceSwap: number;
+    latestTime: number;
+    poolIdx: number;
+    priceIndic24hAgo: number;
+    priceLiq24hAgo: number;
+    priceSwap24hAgo: number;
+    baseVolume24hAgo: number;
+    quoteVolume24hAgo: number;
+    baseFees24hAgo: number;
+    quoteFees24hAgo: number;
+    quote: string;
+    quoteFees: number;
+    quoteTvl: number;
+    quoteVolume: number;
 }

@@ -6,24 +6,24 @@ import {
     useMemo,
     useState,
 } from 'react';
+import { fetchEnsAddress } from '../../ambient-utils/api';
 import {
-    LimitOrderIF,
-    PositionIF,
-    PoolIF,
-    TokenIF,
-    TransactionIF,
-} from '../../ambient-utils/types';
-import matchSearchInput from '../functions/matchSearchInput';
-import { tokenMethodsIF } from './useTokens';
-import {
-    GCGO_OVERRIDE_URL,
     IS_LOCAL_ENV,
     ZERO_ADDRESS,
     tokenListURIs,
 } from '../../ambient-utils/constants';
-import { PoolContext } from '../../contexts/PoolContext';
+import {
+    LimitOrderIF,
+    PoolIF,
+    PositionIF,
+    TokenIF,
+    TransactionIF,
+} from '../../ambient-utils/types';
+import { AppStateContext } from '../../contexts/AppStateContext';
 import { CrocEnvContext } from '../../contexts/CrocEnvContext';
-import { fetchEnsAddress } from '../../ambient-utils/api';
+import { PoolContext } from '../../contexts/PoolContext';
+import matchSearchInput from '../functions/matchSearchInput';
+import { tokenMethodsIF } from './useTokens';
 
 // types specifying which results set should render in the dom
 // `standard` ⮕ standard sidebar content
@@ -56,6 +56,7 @@ export const useSidebarSearch = (
     limitOrderList: LimitOrderIF[],
     tokens: tokenMethodsIF,
 ): sidebarSearchIF => {
+    const { activeNetwork } = useContext(AppStateContext);
     const { poolList } = useContext(PoolContext);
 
     // needed to resolve ENS addresses entered by user
@@ -363,20 +364,16 @@ export const useSidebarSearch = (
     // data returned when querying address as a wallet
     const [outputWallets, setOutputWallets] = useState<walletHexAndENS[]>([]);
 
-    // environmental data needed for wallet query
-    const { activeNetwork, chainData } = useContext(CrocEnvContext);
-
     // logic to query search input as a wallet
     useEffect(() => {
         // fn to run query when user enters a hex address
         async function fetchWalletByHex(searchStr: string): Promise<void> {
             // construct a queryable endpoint for wallet data
-            let walletEndpoint: string =
-                GCGO_OVERRIDE_URL ?? activeNetwork.graphCacheUrl;
+            let walletEndpoint: string = activeNetwork.GCGO_URL;
             walletEndpoint += '/user_txs?';
             walletEndpoint += new URLSearchParams({
                 user: searchStr,
-                chainId: chainData.chainId,
+                chainId: activeNetwork.chainId,
                 n: '1',
             });
             // determine if user-created search input is a wallet (implied by tx data present)

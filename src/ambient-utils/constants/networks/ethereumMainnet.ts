@@ -1,47 +1,53 @@
+import { bigIntToFloat } from '@crocswap-libs/sdk';
 import { lookupChain } from '@crocswap-libs/sdk/dist/context';
+import { Provider } from 'ethers';
+import { NetworkIF } from '../../types/NetworkIF';
 import {
     mainnetETH,
+    mainnetRSWETH,
+    mainnetSWELL,
+    mainnetTBTC,
     mainnetUSDC,
-    mainnetWBTC,
     mainnetUSDT,
 } from '../defaultTokens';
-import { NetworkIF } from '../../types/NetworkIF';
-import { TopPool } from './TopPool';
 import { GCGO_ETHEREUM_URL } from '../gcgo';
-import { Provider } from 'ethers';
-import { bigIntToFloat } from '@crocswap-libs/sdk';
+import { TopPool } from './TopPool';
 
-// const PROVIDER_KEY =
-//     import.meta.env.NODE_ENV === 'test'
-//         ? import.meta.env.PROVIDER_KEY
-//         : import.meta.env.VITE_INFURA_KEY;
+export const PUBLIC_RPC_URL = 'https://ethereum-rpc.publicnode.com';
 
-const MAINNET_RPC_URL =
+export const RESTRICTED_RPC_URL =
     import.meta.env.VITE_MAINNET_RPC_URL !== undefined
         ? import.meta.env.VITE_MAINNET_RPC_URL
-        : 'https://ethereum-mainnet.core.chainstack.com/55818ec2ac63dfef6ff4d1a74cf14d72';
+        : PUBLIC_RPC_URL;
 
-const chain = {
-    chainId: 1,
+const chainIdHex = '0x1';
+const chainSpecFromSDK = lookupChain(chainIdHex);
+
+const chainSpecForWalletConnector = {
+    chainId: Number(chainIdHex),
     name: 'Ethereum',
     currency: 'ETH',
-    rpcUrl: MAINNET_RPC_URL,
-    explorerUrl: 'https://etherscan.io',
+    rpcUrl: PUBLIC_RPC_URL,
+    explorerUrl: 'https://etherscan.io/',
 };
 
 export const ethereumMainnet: NetworkIF = {
-    chainId: '0x1',
-    graphCacheUrl: GCGO_ETHEREUM_URL,
-    evmRpcUrl: MAINNET_RPC_URL,
-    // evmRpcUrl: 'https://mainnet.infura.io/v3/' + PROVIDER_KEY,
-    chain: chain,
-    shouldPollBlock: false,
-    marketData: '0x1',
+    chainId: chainIdHex,
+    chainSpec: chainSpecFromSDK,
+    GCGO_URL: GCGO_ETHEREUM_URL,
+    evmRpcUrl: RESTRICTED_RPC_URL,
+    chainSpecForWalletConnector: chainSpecForWalletConnector,
     defaultPair: [mainnetETH, mainnetUSDC],
+    poolIndex: chainSpecFromSDK.poolIndex,
+    gridSize: chainSpecFromSDK.gridSize,
+    blockExplorer: chainSpecForWalletConnector.explorerUrl,
+    displayName: chainSpecForWalletConnector.name,
     topPools: [
-        new TopPool(mainnetETH, mainnetUSDC, lookupChain('0x1').poolIndex),
-        new TopPool(mainnetETH, mainnetWBTC, lookupChain('0x1').poolIndex),
-        new TopPool(mainnetUSDC, mainnetUSDT, lookupChain('0x1').poolIndex),
+        new TopPool(mainnetRSWETH, mainnetETH, chainSpecFromSDK.poolIndex),
+        new TopPool(mainnetETH, mainnetUSDC, chainSpecFromSDK.poolIndex),
+        new TopPool(mainnetRSWETH, mainnetSWELL, chainSpecFromSDK.poolIndex),
+        new TopPool(mainnetETH, mainnetTBTC, chainSpecFromSDK.poolIndex),
+        new TopPool(mainnetUSDT, mainnetUSDC, chainSpecFromSDK.poolIndex),
     ],
     getGasPriceInGwei: async (provider?: Provider) => {
         if (!provider) return 0;

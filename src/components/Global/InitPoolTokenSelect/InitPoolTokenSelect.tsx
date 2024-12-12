@@ -1,9 +1,9 @@
-import { useState, useEffect, memo, Dispatch, SetStateAction } from 'react';
-import styled from 'styled-components';
-import TokenIcon from '../TokenIcon/TokenIcon';
-import { TokenIF } from '../../../ambient-utils/types';
-import { uriToHttp } from '../../../ambient-utils/dataLayer';
+import { Dispatch, memo, SetStateAction, useEffect, useState } from 'react';
 import { RiArrowDownSLine } from 'react-icons/ri';
+import styled from 'styled-components';
+import { uriToHttp } from '../../../ambient-utils/dataLayer';
+import { TokenIF } from '../../../ambient-utils/types';
+import TokenIcon from '../TokenIcon/TokenIcon';
 
 import { useModal } from '../Modal/useModal';
 import { SoloTokenSelect } from '../TokenSelectContainer/SoloTokenSelect';
@@ -63,11 +63,8 @@ const RightContainer = styled.p`
 interface propsIF {
     tokenAorB: 'A' | 'B' | null;
     token: TokenIF;
-
     reverseTokens?: () => void;
-
     includeWallet?: React.ReactNode;
-
     setTokenModalOpen?: Dispatch<SetStateAction<boolean>>;
 }
 
@@ -75,9 +72,7 @@ function TokenSelectorPoolInit(props: propsIF) {
     const {
         tokenAorB,
         token,
-
         reverseTokens,
-
         setTokenModalOpen = () => null,
     } = props;
 
@@ -118,7 +113,6 @@ function TokenSelectorPoolInit(props: propsIF) {
                 </LeftContainer>
                 <RightContainer>{token?.name}</RightContainer>
             </MainContainer>
-
             {isTokenSelectOpen && modalOrNoModal}
         </>
     );

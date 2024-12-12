@@ -1,14 +1,24 @@
-import React, { createContext, useEffect, useMemo, useState } from 'react';
-import { NetworkIF, TokenIF } from '../ambient-utils/types';
-import { ChainSpec, sortBaseQuoteTokens } from '@crocswap-libs/sdk';
-import { getDefaultPairForChain, mainnetETH } from '../ambient-utils/constants';
-import { useAppChain } from '../App/hooks/useAppChain';
+import { sortBaseQuoteTokens } from '@crocswap-libs/sdk';
 import {
+    createContext,
+    Dispatch,
+    ReactNode,
+    SetStateAction,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
+import { getDefaultPairForChain, mainnetETH } from '../ambient-utils/constants';
+import {
+    isBtcPair,
     isETHPair,
     isStablePair,
     translateTokenSymbol,
 } from '../ambient-utils/dataLayer';
-import { tokenMethodsIF, useTokens } from '../App/hooks/useTokens';
+import { TokenIF } from '../ambient-utils/types';
+import { AppStateContext } from './AppStateContext';
+import { TokenContext } from './TokenContext';
 
 export interface TradeDataContextIF {
     tokenA: TokenIF;
@@ -28,68 +38,67 @@ export interface TradeDataContextIF {
     currentPoolPriceTick: number;
     slippageTolerance: number;
 
-    setTokenA: React.Dispatch<React.SetStateAction<TokenIF>>;
-    setTokenB: React.Dispatch<React.SetStateAction<TokenIF>>;
-    setDenomInBase: React.Dispatch<React.SetStateAction<boolean>>;
-    setIsTokenAPrimary: React.Dispatch<React.SetStateAction<boolean>>;
-    setDidUserFlipDenom: React.Dispatch<React.SetStateAction<boolean>>;
+    setTokenA: Dispatch<SetStateAction<TokenIF>>;
+    setTokenB: Dispatch<SetStateAction<TokenIF>>;
+    setDenomInBase: Dispatch<SetStateAction<boolean>>;
+    setIsTokenAPrimary: Dispatch<SetStateAction<boolean>>;
+    setDidUserFlipDenom: Dispatch<SetStateAction<boolean>>;
     toggleDidUserFlipDenom: () => void;
-    setSoloToken: React.Dispatch<React.SetStateAction<TokenIF>>;
-    setShouldSwapDirectionReverse: React.Dispatch<
-        React.SetStateAction<boolean>
-    >;
-    setPrimaryQuantity: React.Dispatch<React.SetStateAction<string>>;
-    setLimitTick: React.Dispatch<React.SetStateAction<number | undefined>>;
-    setPoolPriceNonDisplay: React.Dispatch<React.SetStateAction<number>>;
-    setSlippageTolerance: React.Dispatch<React.SetStateAction<number>>;
-
-    chainData: ChainSpec;
-    activeNetwork: NetworkIF;
-    chooseNetwork: (network: NetworkIF) => void;
+    setSoloToken: Dispatch<SetStateAction<TokenIF>>;
+    setShouldSwapDirectionReverse: Dispatch<SetStateAction<boolean>>;
+    setPrimaryQuantity: Dispatch<SetStateAction<string>>;
+    setLimitTick: Dispatch<SetStateAction<number | undefined>>;
+    setPoolPriceNonDisplay: Dispatch<SetStateAction<number>>;
+    setSlippageTolerance: Dispatch<SetStateAction<number>>;
     defaultRangeWidthForActivePool: number;
     getDefaultRangeWidthForTokenPair: (
         chainId: string,
         baseAddress: string,
         quoteAddress: string,
     ) => number;
-
     noGoZoneBoundaries: number[];
-    setNoGoZoneBoundaries: React.Dispatch<React.SetStateAction<number[]>>;
+    setNoGoZoneBoundaries: Dispatch<SetStateAction<number[]>>;
+    blackListedTimeParams: Map<string, Set<number>>;
+    addToBlackList: (tokenPair: string, timeParam: number) => void;
 }
 
-export const TradeDataContext = createContext<TradeDataContextIF>(
-    {} as TradeDataContextIF,
-);
+export const TradeDataContext = createContext({} as TradeDataContextIF);
 // Have to set these values to something on load, so we use default pair
 // for default chain. Don't worry if user is coming in to another chain,
 // since these will get updated by useUrlParams() in any context where a
 // pair is necessary at load time
 
-export const TradeDataContextProvider = (props: {
-    children: React.ReactNode;
-}) => {
-    const { chainData, activeNetwork, chooseNetwork } = useAppChain();
+export const TradeDataContextProvider = (props: { children: ReactNode }) => {
+    const {
+        activeNetwork: { chainId },
+    } = useContext(AppStateContext);
+    const { tokens } = useContext(TokenContext);
 
     const savedTokenASymbol = localStorage.getItem('tokenA');
     const savedTokenBSymbol = localStorage.getItem('tokenB');
 
-    const [dfltTokenA, dfltTokenB]: [TokenIF, TokenIF] = getDefaultPairForChain(
-        chainData.chainId,
-    );
+    const [dfltTokenA, dfltTokenB]: [TokenIF, TokenIF] =
+        getDefaultPairForChain(chainId);
 
     // Limit NoGoZone
     const [noGoZoneBoundaries, setNoGoZoneBoundaries] = useState([0, 0]);
 
-    const tokens: tokenMethodsIF = useTokens(chainData.chainId, []);
-
     const tokensMatchingA =
         savedTokenASymbol === 'ETH'
             ? [dfltTokenA]
-            : tokens.getTokensByNameOrSymbol(savedTokenASymbol || '', true);
+            : tokens.getTokensByNameOrSymbol(
+                  savedTokenASymbol || '',
+                  chainId,
+                  true,
+              );
     const tokensMatchingB =
         savedTokenBSymbol === 'ETH'
             ? [dfltTokenA]
-            : tokens.getTokensByNameOrSymbol(savedTokenBSymbol || '', true);
+            : tokens.getTokensByNameOrSymbol(
+                  savedTokenBSymbol || '',
+                  chainId,
+                  true,
+              );
 
     const firstTokenMatchingA = tokensMatchingA[0] || undefined;
     const firstTokenMatchingB = tokensMatchingB[0] || undefined;
@@ -107,14 +116,15 @@ export const TradeDataContextProvider = (props: {
     const shouldReverseDefaultTokens =
         isSavedTokenADefaultB || isSavedTokenBDefaultA;
 
-    const [tokenA, setTokenA] = React.useState<TokenIF>(() => {
+    const [tokenA, setTokenA] = useState<TokenIF>(() => {
         return firstTokenMatchingA
             ? firstTokenMatchingA
             : shouldReverseDefaultTokens
               ? dfltTokenB
               : dfltTokenA;
     });
-    const [tokenB, setTokenB] = React.useState<TokenIF>(
+
+    const [tokenB, setTokenB] = useState<TokenIF>(
         firstTokenMatchingB
             ? firstTokenMatchingB
             : shouldReverseDefaultTokens
@@ -122,14 +132,35 @@ export const TradeDataContextProvider = (props: {
               : dfltTokenB,
     );
 
+    const [blackListedTimeParams, setBlackListedTimeParams] = useState<
+        Map<string, Set<number>>
+    >(new Map());
+
+    useEffect(() => {
+        // update tokenA and tokenB when chain changes
+        setTokenA(
+            firstTokenMatchingA
+                ? firstTokenMatchingA
+                : shouldReverseDefaultTokens
+                  ? dfltTokenB
+                  : dfltTokenA,
+        );
+        setTokenB(
+            firstTokenMatchingB
+                ? firstTokenMatchingB
+                : shouldReverseDefaultTokens
+                  ? dfltTokenA
+                  : dfltTokenB,
+        );
+    }, [chainId]);
+
     const [
         areDefaultTokensUpdatedForChain,
         setAreDefaultTokensUpdatedForChain,
-    ] = React.useState<boolean>(false);
-    const [isDenomBase, setDenomInBase] = React.useState<boolean>(true);
+    ] = useState<boolean>(false);
+    const [isDenomBase, setDenomInBase] = useState<boolean>(true);
     // TODO: this can likely be refactored out
-    const [didUserFlipDenom, setDidUserFlipDenom] =
-        React.useState<boolean>(false);
+    const [didUserFlipDenom, setDidUserFlipDenom] = useState<boolean>(false);
 
     const { baseToken, quoteToken, isTokenABase } = useMemo(() => {
         const [baseTokenAddress] = sortBaseQuoteTokens(
@@ -157,15 +188,15 @@ export const TradeDataContextProvider = (props: {
         setDidUserFlipDenom(!didUserFlipDenom);
     };
 
-    const [soloToken, setSoloToken] = React.useState(mainnetETH);
+    const [soloToken, setSoloToken] = useState<TokenIF>(mainnetETH);
 
     const [shouldSwapDirectionReverse, setShouldSwapDirectionReverse] =
-        React.useState(false);
+        useState<boolean>(false);
 
-    const [primaryQuantity, setPrimaryQuantity] = React.useState(
+    const [primaryQuantity, setPrimaryQuantity] = useState<string>(
         localStorage.getItem('primaryQuantity') || '',
     );
-    const [isTokenAPrimary, setIsTokenAPrimary] = React.useState<boolean>(
+    const [isTokenAPrimary, setIsTokenAPrimary] = useState<boolean>(
         localStorage.getItem('isTokenAPrimary') !== null
             ? localStorage.getItem('isTokenAPrimary') === 'true'
             : true,
@@ -180,22 +211,22 @@ export const TradeDataContextProvider = (props: {
     }, [isTokenAPrimary]);
 
     useEffect(() => {
-        localStorage.setItem('tokenA', translateTokenSymbol(tokenA.symbol));
-        localStorage.setItem('tokenB', translateTokenSymbol(tokenB.symbol));
+        tokenA.symbol &&
+            localStorage.setItem('tokenA', translateTokenSymbol(tokenA.symbol));
+        tokenB.symbol &&
+            localStorage.setItem('tokenB', translateTokenSymbol(tokenB.symbol));
     }, [tokenA.address, tokenB.address]);
 
     useEffect(() => {
         localStorage.setItem('primaryQuantity', primaryQuantity);
     }, [primaryQuantity]);
 
-    const [limitTick, setLimitTick] = React.useState<number | undefined>(
-        undefined,
-    );
-    const [poolPriceNonDisplay, setPoolPriceNonDisplay] = React.useState(0);
+    const [limitTick, setLimitTick] = useState<number | undefined>(undefined);
+    const [poolPriceNonDisplay, setPoolPriceNonDisplay] = useState(0);
 
     const currentPoolPriceTick = useMemo(
         () =>
-            poolPriceNonDisplay === undefined
+            poolPriceNonDisplay === undefined || poolPriceNonDisplay === 0
                 ? 0
                 : Math.log(poolPriceNonDisplay) / Math.log(1.0001),
         [poolPriceNonDisplay],
@@ -206,22 +237,17 @@ export const TradeDataContextProvider = (props: {
         setDidUserFlipDenom(false);
     }, [baseToken.address + quoteToken.address]);
 
-    const [slippageTolerance, setSlippageTolerance] = React.useState(0.5);
+    const [slippageTolerance, setSlippageTolerance] = useState<number>(0.5);
 
     const getDefaultRangeWidthForTokenPair = (
         chainId: string,
         baseAddress: string,
         quoteAddress: string,
     ) => {
-        // const isPoolBlastEthUSDB =
-        //     chainId === '0x13e31' &&
-        //     baseAddress.toLowerCase() === blastETH.address.toLowerCase() &&
-        //     quoteAddress.toLowerCase() === blastUSDB.address.toLowerCase();
-        // // temporarily reset to 10 for ETH/USDB until volatility reduces
-        // const defaultWidth = isPoolBlastEthUSDB ? 10 : 10;
         const isPoolStable =
             isStablePair(baseAddress, quoteAddress) ||
-            isETHPair(baseAddress, quoteAddress);
+            isETHPair(baseAddress, quoteAddress) ||
+            isBtcPair(baseAddress, quoteAddress);
         const defaultWidth = isPoolStable ? 0.5 : 10;
 
         return defaultWidth;
@@ -229,12 +255,23 @@ export const TradeDataContextProvider = (props: {
 
     const defaultRangeWidthForActivePool = useMemo(() => {
         const defaultWidth = getDefaultRangeWidthForTokenPair(
-            chainData.chainId,
+            chainId,
             baseToken.address,
             quoteToken.address,
         );
         return defaultWidth;
-    }, [baseToken.address + quoteToken.address + chainData.chainId]);
+    }, [baseToken.address + quoteToken.address + chainId]);
+
+    const addToBlackList = (tokenPair: string, timeParam: number) => {
+        setBlackListedTimeParams((prev) => {
+            if (prev.has(tokenPair)) {
+                prev.get(tokenPair)?.add(timeParam);
+            } else {
+                prev.set(tokenPair, new Set([timeParam]));
+            }
+            return prev;
+        });
+    };
 
     const tradeDataContext = {
         tokenA,
@@ -265,13 +302,12 @@ export const TradeDataContextProvider = (props: {
         setLimitTick,
         setPoolPriceNonDisplay,
         setSlippageTolerance,
-        chainData,
-        activeNetwork,
-        chooseNetwork,
         defaultRangeWidthForActivePool,
         getDefaultRangeWidthForTokenPair,
         noGoZoneBoundaries,
         setNoGoZoneBoundaries,
+        blackListedTimeParams,
+        addToBlackList,
     };
 
     return (

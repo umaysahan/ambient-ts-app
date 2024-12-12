@@ -1,8 +1,8 @@
 import styled from 'styled-components/macro';
 
-import { FlexContainer, Text, GridContainer } from '../Common';
-import { hideScrollbarCss } from '../Common/Container';
 import { Link } from 'react-router-dom';
+import { FlexContainer, GridContainer, Text } from '../Common';
+import { hideScrollbarCss } from '../Common/Container';
 
 export const HomeTitle = styled.div`
     font-style: normal;
@@ -237,10 +237,9 @@ export const BGImage = styled.img<{ height: number; top: number }>`
 
 // Mobile Landing Sections
 export const MobileMainLogo = styled(FlexContainer)`
-    height: 200px;
+    height: 130px;
     background-size: cover;
     background-position: center center;
-    margin-top: 3rem;
 
     img {
         object-fit: contain;

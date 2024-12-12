@@ -1,8 +1,8 @@
 import { Dispatch, memo, SetStateAction, useMemo } from 'react';
 import { BsSortDown, BsSortUpAlt } from 'react-icons/bs';
 import { IS_LOCAL_ENV } from '../../../../../ambient-utils/constants';
-import { RangeSortType } from '../../useSortedPositions';
 import { FlexContainer, Text } from '../../../../../styled/Common';
+import { RangeSortType } from '../../useSortedPositions';
 
 interface propsIF {
     header: {
@@ -81,10 +81,13 @@ function RangeHeader(props: propsIF) {
                         alignRight
                             ? 'flex-end'
                             : alignCenter
-                            ? 'center'
-                            : 'flex-start'
+                              ? 'center'
+                              : 'flex-start'
                     }
-                    style={{ cursor: sortable ? 'pointer' : 'default' }}
+                    style={{
+                        cursor: sortable ? 'pointer' : 'default',
+                        paddingRight: alignRight ? '10px' : '0',
+                    }}
                     onClick={() => handleClick(slug as RangeSortType)}
                 >
                     <Text
@@ -97,8 +100,8 @@ function RangeHeader(props: propsIF) {
                             alignRight
                                 ? 'right'
                                 : alignCenter
-                                ? 'center'
-                                : 'left'
+                                  ? 'center'
+                                  : 'left'
                         }
                         style={{ textTransform: 'none' }}
                     >

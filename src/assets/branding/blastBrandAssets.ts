@@ -1,16 +1,14 @@
-import { brandIF } from './types';
-import large from '../images/logos/large.svg';
 import blastLogo from '../../assets/images/logos/blast_logo.svg';
+import large from '../images/logos/large.svg';
+import { brandIF } from './types';
 
 export const blastBrandAssets: brandIF = {
     networks: {
         '0x13e31': {
-            color: 'purple_dark',
-            hero: [
-                { content: 'ambient', processAs: 'text' },
-                { content: '×', processAs: 'separator' },
-                { content: blastLogo, processAs: 'image' },
-            ],
+            // first value in array is default color scheme
+            color: ['purple_dark', 'purple_light', 'futa_dark'],
+            premiumColor: [],
+            cobrandingLogo: blastLogo,
         },
     },
     platformName: 'blast',

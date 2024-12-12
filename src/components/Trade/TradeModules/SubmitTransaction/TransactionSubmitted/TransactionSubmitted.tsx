@@ -1,12 +1,11 @@
-import styles from './TransactionSubmitted.module.css';
-import Animation from '../../../../Global/Animation/Animation';
-import completed from '../../../../../assets/animations/completed.json';
-import addTokenToWallet from './addTokenToWallet';
-import Button from '../../../../Form/Button';
+import { useWeb3ModalProvider } from '@web3modal/ethers/react';
 import { FiExternalLink } from 'react-icons/fi';
 import { useLocation } from 'react-router-dom';
+import { brand } from '../../../../../ambient-utils/constants';
 import { getChainExplorer } from '../../../../../ambient-utils/dataLayer';
-import { useWeb3ModalProvider } from '@web3modal/ethers/react';
+import Button from '../../../../Form/Button';
+import addTokenToWallet from './addTokenToWallet';
+import styles from './TransactionSubmitted.module.css';
 
 interface PropsIF {
     type:
@@ -46,6 +45,7 @@ export default function TransactionSubmitted(props: PropsIF) {
     const blockExplorer = getChainExplorer(chainId);
     const txUrlOnBlockExplorer = `${blockExplorer}tx/${hash}`;
     const currentLocation = useLocation()?.pathname;
+    const isFuta = brand === 'futa';
 
     const logoURI = tokenBImage;
 
@@ -64,7 +64,7 @@ export default function TransactionSubmitted(props: PropsIF) {
         <Button
             idForDOM='import_token_B_into_wallet_button'
             flat
-            title={`Import ${tokenBSymbol} into Connected Wallet`}
+            title={`import ${tokenBSymbol} into Connected Wallet`}
             action={handleAddToMetaMask}
             disabled={false}
         />
@@ -77,9 +77,13 @@ export default function TransactionSubmitted(props: PropsIF) {
             rel='noreferrer'
             className={styles.view_etherscan}
             aria-label='view on block explorer'
+            style={{ color: isFuta ? 'var(--dark1)' : 'var(--text1)' }}
         >
             View on Block Explorer
-            <FiExternalLink size={18} color='var(--text1)' />
+            <FiExternalLink
+                size={18}
+                color={isFuta ? 'var(--dark1)' : 'var(--text1)'}
+            />
         </a>
     );
     return (
@@ -88,82 +92,70 @@ export default function TransactionSubmitted(props: PropsIF) {
                 noAnimation && styles.noAnimation_submitted
             }`}
         >
-            <div
-                style={{
-                    height: noAnimation ? 'auto' : '180px',
-                }}
-            >
-                {!noAnimation && (
-                    <div className={styles.completed_animation}>
-                        <Animation animData={completed} loop={false} />
-                    </div>
-                )}
-            </div>
-
             <h2 style={{ marginBottom: '15px' }}>
                 {type === 'Limit'
                     ? `Limit Order ${
                           isTransactionFailed
                               ? 'Failed'
                               : isConfirmed
-                              ? 'Success!'
-                              : 'Submitted'
+                                ? 'Success!'
+                                : 'Submitted'
                       }`
                     : type === 'Range'
-                    ? `Pool ${
-                          isTransactionFailed
-                              ? 'Failed'
-                              : isConfirmed
-                              ? 'Success!'
-                              : 'Submitted'
-                      }`
-                    : type === 'Reposition'
-                    ? `Reposition ${
-                          isTransactionFailed
-                              ? 'Failed'
-                              : isConfirmed
-                              ? 'Success!'
-                              : 'Submitted'
-                      }`
-                    : type === 'Harvest'
-                    ? `Harvest ${
-                          isTransactionFailed
-                              ? 'Failed'
-                              : isConfirmed
-                              ? 'Success!'
-                              : 'Submitted'
-                      }`
-                    : type === 'Reset'
-                    ? `Reset ${
-                          isTransactionFailed
-                              ? 'Failed'
-                              : isConfirmed
-                              ? 'Success!'
-                              : 'Submitted'
-                      }`
-                    : type === 'Remove'
-                    ? `Removal ${
-                          isTransactionFailed
-                              ? 'Failed'
-                              : isConfirmed
-                              ? 'Success!'
-                              : 'Submitted'
-                      }`
-                    : type === 'Claim'
-                    ? `Claim ${
-                          isTransactionFailed
-                              ? 'Failed'
-                              : isConfirmed
-                              ? 'Success!'
-                              : 'Submitted'
-                      }`
-                    : `Swap ${
-                          isTransactionFailed
-                              ? 'Failed'
-                              : isConfirmed
-                              ? 'Success!'
-                              : 'Submitted'
-                      }`}
+                      ? `Pool ${
+                            isTransactionFailed
+                                ? 'Failed'
+                                : isConfirmed
+                                  ? 'Success!'
+                                  : 'Submitted'
+                        }`
+                      : type === 'Reposition'
+                        ? `Reposition ${
+                              isTransactionFailed
+                                  ? 'Failed'
+                                  : isConfirmed
+                                    ? 'Success!'
+                                    : 'Submitted'
+                          }`
+                        : type === 'Harvest'
+                          ? `Harvest ${
+                                isTransactionFailed
+                                    ? 'Failed'
+                                    : isConfirmed
+                                      ? 'Success!'
+                                      : 'Submitted'
+                            }`
+                          : type === 'Reset'
+                            ? `Reset ${
+                                  isTransactionFailed
+                                      ? 'Failed'
+                                      : isConfirmed
+                                        ? 'Success!'
+                                        : 'Submitted'
+                              }`
+                            : type === 'Remove'
+                              ? `Removal ${
+                                    isTransactionFailed
+                                        ? 'Failed'
+                                        : isConfirmed
+                                          ? 'Success!'
+                                          : 'Submitted'
+                                }`
+                              : type === 'Claim'
+                                ? `Claim ${
+                                      isTransactionFailed
+                                          ? 'Failed'
+                                          : isConfirmed
+                                            ? 'Success!'
+                                            : 'Submitted'
+                                  }`
+                                : `Swap ${
+                                      isTransactionFailed
+                                          ? 'Failed'
+                                          : isConfirmed
+                                            ? 'Success!'
+                                            : 'Submitted'
+                                  }`}
             </h2>
             <div
                 className={`${styles.action_buttons} ${

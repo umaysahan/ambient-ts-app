@@ -1,6 +1,8 @@
+import { fromDisplayQty } from '@crocswap-libs/sdk';
 import { MutableRefObject, useContext, useMemo } from 'react';
-import { TokenIF } from '../../ambient-utils/types';
 import { ZERO_ADDRESS } from '../../ambient-utils/constants';
+import { TokenIF } from '../../ambient-utils/types';
+import { AppStateContext } from '../../contexts';
 import { ReceiptContext } from '../../contexts/ReceiptContext';
 
 export function useHandleRangeButtonMessage(
@@ -11,7 +13,7 @@ export function useHandleRangeButtonMessage(
     isTokenInputDisabled: boolean,
     isWithdrawTokenFromDexChecked: boolean,
     isPoolInitialized: boolean,
-    tokenQtyCoveredByWalletBalance: number,
+    tokenQtyCoveredByWalletBalance: bigint,
     amountToReduceNativeTokenQty: number,
     activeRangeTxHash: MutableRefObject<string>,
     clearTokenInputs: () => void,
@@ -20,19 +22,28 @@ export function useHandleRangeButtonMessage(
 ) {
     const { pendingTransactions } = useContext(ReceiptContext);
 
+    const { isUserOnline } = useContext(AppStateContext);
+
     const { tokenAllowed, rangeButtonErrorMessage } = useMemo(() => {
         let tokenAllowed = false;
         let rangeButtonErrorMessage = '';
 
         const isNativeToken = token.address === ZERO_ADDRESS;
-
-        if (!isPoolInitialized) {
+        if (!isUserOnline) {
+            rangeButtonErrorMessage = 'Currently Offline';
+        } else if (!isPoolInitialized) {
             rangeButtonErrorMessage = 'Pool Not Initialized';
-        } else if (isInitPage && parseFloat(tokenBalance) <= 0) {
+        } else if (
+            isInitPage &&
+            fromDisplayQty(tokenBalance || '0', token.decimals) <= 0
+        ) {
             tokenAllowed = false;
             rangeButtonErrorMessage = `${token.symbol} Wallet Balance Insufficient`;
         } else if (
-            (isNaN(parseFloat(tokenAmount)) || parseFloat(tokenAmount) <= 0) &&
+            (tokenAmount === '0' ||
+                tokenAmount === '0.00' ||
+                tokenAmount === '' ||
+                parseFloat(tokenAmount) < 0) &&
             !isTokenInputDisabled
         ) {
             rangeButtonErrorMessage = 'Enter an Amount';
@@ -40,8 +51,9 @@ export function useHandleRangeButtonMessage(
             if (isWithdrawTokenFromDexChecked) {
                 if (
                     !isTokenInputDisabled &&
-                    parseFloat(tokenAmount) >
-                        parseFloat(tokenDexBalance) + parseFloat(tokenBalance)
+                    fromDisplayQty(tokenAmount || '0', token.decimals) >
+                        fromDisplayQty(tokenDexBalance || '0', token.decimals) +
+                            fromDisplayQty(tokenBalance || '0', token.decimals)
                 ) {
                     if (
                         pendingTransactions.some(
@@ -54,8 +66,11 @@ export function useHandleRangeButtonMessage(
                 } else if (
                     isNativeToken &&
                     tokenQtyCoveredByWalletBalance +
-                        amountToReduceNativeTokenQty >
-                        parseFloat(tokenBalance) + 0.0000000001 // offset to account for floating point math inconsistencies
+                        fromDisplayQty(
+                            amountToReduceNativeTokenQty.toString(),
+                            token.decimals,
+                        ) >
+                        fromDisplayQty(tokenBalance || '0', token.decimals)
                 ) {
                     tokenAllowed = false;
                     rangeButtonErrorMessage = `${token.symbol} Wallet Balance Insufficient to Cover Gas`;
@@ -65,7 +80,8 @@ export function useHandleRangeButtonMessage(
             } else {
                 if (
                     !isTokenInputDisabled &&
-                    parseFloat(tokenAmount) > parseFloat(tokenBalance)
+                    fromDisplayQty(tokenAmount || '0', token.decimals) >
+                        fromDisplayQty(tokenBalance || '0', token.decimals)
                 ) {
                     if (
                         pendingTransactions.some(
@@ -78,8 +94,11 @@ export function useHandleRangeButtonMessage(
                 } else if (
                     isNativeToken &&
                     tokenQtyCoveredByWalletBalance +
-                        amountToReduceNativeTokenQty >
-                        parseFloat(tokenBalance) + 0.0000000001 // offset to account for floating point math inconsistencies
+                        fromDisplayQty(
+                            amountToReduceNativeTokenQty.toString(),
+                            token.decimals,
+                        ) >
+                        fromDisplayQty(tokenBalance || '0', token.decimals)
                 ) {
                     tokenAllowed = false;
                     rangeButtonErrorMessage = `${token.symbol} Wallet Balance Insufficient to Cover Gas`;
@@ -93,6 +112,7 @@ export function useHandleRangeButtonMessage(
             rangeButtonErrorMessage,
         };
     }, [
+        isUserOnline,
         isMintLiqEnabled,
         tokenAmount,
         tokenQtyCoveredByWalletBalance,

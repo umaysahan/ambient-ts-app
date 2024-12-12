@@ -1,8 +1,8 @@
 import { Dispatch, memo, SetStateAction, useMemo } from 'react';
 import { BsSortDown, BsSortUpAlt } from 'react-icons/bs';
 import { IS_LOCAL_ENV } from '../../../../../ambient-utils/constants';
-import { TxSortType } from '../../useSortedTxs';
 import { FlexContainer, Text } from '../../../../../styled/Common';
+import { TxSortType } from '../../useSortedTxs';
 
 interface TransactionHeaderPropsIF {
     header: {
@@ -68,10 +68,13 @@ function TransactionHeader(props: TransactionHeaderPropsIF) {
                         alignRight
                             ? 'flex-end'
                             : alignCenter
-                            ? 'center'
-                            : 'flex-start'
+                              ? 'center'
+                              : 'flex-start'
                     }
-                    style={{ cursor: sortable ? 'pointer' : 'default' }}
+                    style={{
+                        cursor: sortable ? 'pointer' : 'default',
+                        paddingRight: alignRight ? '10px' : '0',
+                    }}
                     onClick={() => handleClick(slug as TxSortType)}
                 >
                     <Text
@@ -81,8 +84,8 @@ function TransactionHeader(props: TransactionHeaderPropsIF) {
                             alignRight
                                 ? 'right'
                                 : alignCenter
-                                ? 'center'
-                                : 'left'
+                                  ? 'center'
+                                  : 'left'
                         }
                         style={{ textTransform: 'none' }}
                     >

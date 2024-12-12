@@ -7,32 +7,32 @@ import {
     useEffect,
     useState,
 } from 'react';
-import { HiPlus, HiMinus } from 'react-icons/hi';
+import { AiOutlineInfoCircle } from 'react-icons/ai';
+import { HiMinus, HiPlus } from 'react-icons/hi';
+import { removeLeadingZeros } from '../../../../ambient-utils/dataLayer';
+import {
+    pinTickToTickLower,
+    pinTickToTickUpper,
+} from '../../../../ambient-utils/dataLayer/functions/pinTick';
+import { useSimulatedIsPoolInitialized } from '../../../../App/hooks/useSimulatedIsPoolInitialized';
+import { AppStateContext } from '../../../../contexts/AppStateContext';
 import { CrocEnvContext } from '../../../../contexts/CrocEnvContext';
 import { PoolContext } from '../../../../contexts/PoolContext';
+import { TradeDataContext } from '../../../../contexts/TradeDataContext';
 import { TradeTableContext } from '../../../../contexts/TradeTableContext';
-import { removeLeadingZeros } from '../../../../ambient-utils/dataLayer';
-import { useSimulatedIsPoolInitialized } from '../../../../App/hooks/useSimulatedIsPoolInitialized';
-import { updatesIF } from '../../../../utils/hooks/useUrlParams';
 import { FlexContainer } from '../../../../styled/Common';
 import {
     LimitRateButton,
     LimitRateButtonContainer,
     TokenQuantityInput,
 } from '../../../../styled/Components/TradeModules';
-import { TradeDataContext } from '../../../../contexts/TradeDataContext';
 import {
     linkGenMethodsIF,
     useLinkGen,
 } from '../../../../utils/hooks/useLinkGen';
-import {
-    pinTickToTickLower,
-    pinTickToTickUpper,
-} from '../../../../ambient-utils/dataLayer/functions/pinTick';
-import { ExplanationButton } from '../../../Form/Icons/Icons.styles';
-import { AiOutlineInfoCircle } from 'react-icons/ai';
-import { AppStateContext } from '../../../../contexts/AppStateContext';
+import { updatesIF } from '../../../../utils/hooks/useUrlParams';
 import { Chip } from '../../../Form/Chip';
+import { ExplanationButton } from '../../../Form/Icons/Icons.styles';
 
 interface propsIF {
     previousDisplayPrice: string;
@@ -56,15 +56,14 @@ export default function LimitRate(props: propsIF) {
     } = props;
 
     const {
-        chainData: { gridSize },
-        crocEnv,
-    } = useContext(CrocEnvContext);
+        activeNetwork: { gridSize, chainId },
+        globalPopup: { open: openGlobalPopup },
+    } = useContext(AppStateContext);
+    const { crocEnv } = useContext(CrocEnvContext);
     const { pool, usdPriceInverse, isTradeDollarizationEnabled, poolData } =
         useContext(PoolContext);
     const { showOrderPulseAnimation } = useContext(TradeTableContext);
     const linkGenLimit: linkGenMethodsIF = useLinkGen('limit');
-    const { chainData } = useContext(CrocEnvContext);
-
     const isPoolInitialized = useSimulatedIsPoolInitialized();
     const {
         isDenomBase,
@@ -77,12 +76,10 @@ export default function LimitRate(props: propsIF) {
         isTokenABase: isBid,
         currentPoolPriceTick,
     } = useContext(TradeDataContext);
-    const {
-        globalPopup: { open: openGlobalPopup },
-    } = useContext(AppStateContext);
+
     const { basePrice, quotePrice, poolPriceDisplay } = poolData;
 
-    const side =
+    const side: 'buy' | 'sell' =
         (isDenomBase && !isBid) || (!isDenomBase && isBid) ? 'buy' : 'sell';
 
     const increaseTick = (): void => {
@@ -235,7 +232,7 @@ export default function LimitRate(props: propsIF) {
                 if (shouldReverse) {
                     setIsTokenAPrimary((isTokenAPrimary) => !isTokenAPrimary);
                     linkGenLimit.redirect({
-                        chain: chainData.chainId,
+                        chain: chainId,
                         tokenA: tokenB.address,
                         tokenB: tokenA.address,
                         limitTick: pinnedTick,
@@ -278,8 +275,8 @@ export default function LimitRate(props: propsIF) {
             inputStartsWithDollar
                 ? input.slice(1)
                 : inputEndsWithDollar
-                ? input.slice(undefined, -1)
-                : input,
+                  ? input.slice(undefined, -1)
+                  : input,
         );
 
         const convertedFromDollarNum = isDollarized
@@ -287,13 +284,13 @@ export default function LimitRate(props: propsIF) {
                 ? quotePrice
                     ? parsedInput / quotePrice
                     : usdPriceInverse
+                      ? parsedInput / usdPriceInverse
+                      : undefined
+                : basePrice
+                  ? parsedInput / basePrice
+                  : usdPriceInverse
                     ? parsedInput / usdPriceInverse
                     : undefined
-                : basePrice
-                ? parsedInput / basePrice
-                : usdPriceInverse
-                ? parsedInput / usdPriceInverse
-                : undefined
             : undefined;
 
         const newDisplayPrice = removeLeadingZeros(
@@ -307,7 +304,7 @@ export default function LimitRate(props: propsIF) {
     };
 
     const balancedPresets: number[] = [0, 1, 5, 10];
-    type presetValues = typeof balancedPresets[number];
+    type presetValues = (typeof balancedPresets)[number];
 
     const limitTickMatchesPreset = (preset: number): boolean => {
         if (limitTick === undefined) {
@@ -364,8 +361,8 @@ export default function LimitRate(props: propsIF) {
                             !isPoolInitialized
                                 ? 'Pool not initialized'
                                 : isTradeDollarizationEnabled
-                                ? '$0.00'
-                                : '0.0'
+                                  ? '$0.00'
+                                  : '0.0'
                         }
                         onBlur={(e: ChangeEvent<HTMLInputElement>) =>
                             handleOnBlur(e.target.value)
@@ -375,11 +372,11 @@ export default function LimitRate(props: propsIF) {
                             !isPoolInitialized
                                 ? 'Pool not initialized'
                                 : displayPrice === 'NaN'
-                                ? '...'
-                                : isTradeDollarizationEnabled &&
-                                  !displayPrice.startsWith('$')
-                                ? '$' + displayPrice
-                                : displayPrice
+                                  ? '...'
+                                  : isTradeDollarizationEnabled &&
+                                      !displayPrice.startsWith('$')
+                                    ? '$' + displayPrice
+                                    : displayPrice
                         }
                         type='string'
                         step='any'

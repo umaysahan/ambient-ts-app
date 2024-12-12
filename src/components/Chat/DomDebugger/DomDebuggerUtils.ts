@@ -2,7 +2,7 @@ import styles from './DomDebugger.module.css';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const domDebug = (key: string, value: any) => {
-    if (!value) value = 'undefined | null';
+    if (!value && value != 0) value = 'undefined | null';
     if (value instanceof Object) {
         value = JSON.stringify(value).toString();
     } else {
@@ -40,7 +40,7 @@ export const domDebug = (key: string, value: any) => {
             '.' + styles.dom_debug_value,
         )[0];
 
-        valueDiv.innerHTML = value;
+        valueDiv.textContent = value;
     } else {
         const debugNodesWrapper = el.querySelectorAll(
             '.' + styles.dom_debug_nodes_wrapper,
@@ -64,7 +64,7 @@ export const domDebug = (key: string, value: any) => {
         const valueDiv = document.createElement('div');
         valueDiv.title = value;
         valueDiv.classList.add(styles.dom_debug_value);
-        valueDiv.innerHTML = value;
+        valueDiv.textContent = value;
         newNode.appendChild(valueDiv);
     }
 };

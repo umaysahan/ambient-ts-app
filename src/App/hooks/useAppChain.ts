@@ -1,18 +1,28 @@
+import { useSwitchNetwork, useWeb3ModalAccount } from '@web3modal/ethers/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChainSpec } from '@crocswap-libs/sdk';
-import { lookupChain } from '@crocswap-libs/sdk/dist/context';
-import { useWeb3ModalAccount, useSwitchNetwork } from '@web3modal/ethers/react';
 import {
+    baseSepolia,
+    blastMainnet,
+    blastSepolia,
+    ethereumMainnet,
+    ethereumSepolia,
+    plumeSepolia,
+    scrollMainnet,
+    scrollSepolia,
+    supportedNetworks,
+    swellMainnet,
+    swellSepolia,
+} from '../../ambient-utils/constants';
+import {
+    chainNumToString,
+    checkEoaHexAddress,
     getDefaultChainId,
     validateChainId,
-    chainNumToString,
 } from '../../ambient-utils/dataLayer';
-import { useLinkGen, linkGenMethodsIF } from '../../utils/hooks/useLinkGen';
 import { NetworkIF } from '../../ambient-utils/types';
-import { supportedNetworks } from '../../ambient-utils/constants';
+import { linkGenMethodsIF, useLinkGen } from '../../utils/hooks/useLinkGen';
 
 export const useAppChain = (): {
-    chainData: ChainSpec;
     activeNetwork: NetworkIF;
     chooseNetwork: (network: NetworkIF) => void;
 } => {
@@ -64,14 +74,6 @@ export const useAppChain = (): {
         return output;
     }
 
-    function has42CharacterStringWith0xAfterSlash(inputString: string) {
-        // Regular expression to match a forward slash followed by '0x' and then exactly 40 hex characters
-        const regex = /\/0x[a-fA-F0-9]{40}/;
-
-        // Test the input string against the regular expression
-        return regex.test(inputString);
-    }
-
     // memoized and validated chain ID from the URL
     const chainInURLValidated: string | null = useMemo(
         () => getChainFromURL(),
@@ -113,7 +115,7 @@ export const useAppChain = (): {
                             after removing the first character for /{hex} URLs 
                             or first 9 characters for /account/{hex} */
                         const isPathHexEoaAddress =
-                            has42CharacterStringWith0xAfterSlash(pathname);
+                            checkEoaHexAddress(pathname);
                         const isPathUserAddress =
                             isPathENS || isPathHexEoaAddress;
 
@@ -123,6 +125,7 @@ export const useAppChain = (): {
                             pathname.includes('/points');
                         const isPathOnAccount = pathname.includes('/account');
                         const isPathOnExplore = pathname.includes('/explore');
+                        const isPathOnAuctions = pathname.includes('/auctions');
 
                         if (chainInURLValidated === incomingChainFromWallet) {
                             // generate params chain manually and navigate user
@@ -156,21 +159,50 @@ export const useAppChain = (): {
                                 isPathUserAddress ||
                                 isPathOnAccount ||
                                 isPathPointsTabOnAccount ||
+                                isPathOnAuctions ||
                                 isPathUserXpOrLeaderboard ||
                                 isPathOnExplore
                             ) {
-                                if (
-                                    activeNetwork.chainId !=
-                                    incomingChainFromWallet
-                                ) {
-                                    window.location.reload();
-                                }
+                                // escape the `else` block at the end
+                                null;
                             } else {
                                 linkGenCurrent.navigate();
                             }
                         }
+                        // wallet authenticated, different chain in active app
                         if (activeNetwork.chainId != incomingChainFromWallet) {
-                            window.location.reload();
+                            let nextNetwork: NetworkIF | undefined;
+                            if (incomingChainFromWallet === '0x1') {
+                                nextNetwork = ethereumMainnet;
+                            } else if (incomingChainFromWallet === '0x13e31') {
+                                nextNetwork = blastMainnet;
+                            } else if (
+                                incomingChainFromWallet === '0xa0c71fd'
+                            ) {
+                                nextNetwork = blastSepolia;
+                            } else if (incomingChainFromWallet === '0xaa36a7') {
+                                nextNetwork = ethereumSepolia;
+                            } else if (incomingChainFromWallet === '0x82750') {
+                                nextNetwork = scrollMainnet;
+                            } else if (incomingChainFromWallet === '0x8274f') {
+                                nextNetwork = scrollSepolia;
+                            } else if (incomingChainFromWallet === '0x18230') {
+                                nextNetwork = plumeSepolia;
+                            } else if (incomingChainFromWallet === '0x784') {
+                                nextNetwork = swellSepolia;
+                            } else if (incomingChainFromWallet === '0x783') {
+                                nextNetwork = swellMainnet;
+                            } else if (incomingChainFromWallet === '0x14a34') {
+                                nextNetwork = baseSepolia;
+                            }
+                            if (nextNetwork) {
+                                setActiveNetwork(nextNetwork);
+                            } else {
+                                console.warn(
+                                    'Chain ID from authenticated wallet not recognized. App will stay on the current chain. Current chain is: ',
+                                    activeNetwork,
+                                );
+                            }
                         } else {
                             setIgnoreFirst(false);
                         }
@@ -193,7 +225,7 @@ export const useAppChain = (): {
         findNetworkData(
             chainInURLValidated
                 ? chainInURLValidated
-                : localStorage.getItem(CHAIN_LS_KEY) ?? defaultChain,
+                : (localStorage.getItem(CHAIN_LS_KEY) ?? defaultChain),
         ) || findNetworkData(defaultChain),
     );
 
@@ -218,15 +250,16 @@ export const useAppChain = (): {
     // ... else in this file responds to changes in the browser environment
     function chooseNetwork(network: NetworkIF): void {
         localStorage.setItem(CHAIN_LS_KEY, network.chainId);
-        const { pathname } = window.location;
-
         setActiveNetwork(network);
+
+        const { pathname } = window.location;
         const isPathENS = pathname.slice(1)?.includes('.eth');
-        const isPathHexEoaAddress =
-            has42CharacterStringWith0xAfterSlash(pathname);
+        const isPathHexEoaAddress = checkEoaHexAddress(pathname);
         const isPathUserAddress = isPathENS || isPathHexEoaAddress;
         const isPathUserXpOrLeaderboard = pathname.includes('/xp');
-        const isPathOnExplore = pathname.includes('/explore');
+        const shouldStayOnCurrentExactPath =
+            isPathUserAddress || isPathUserXpOrLeaderboard;
+
         if (
             linkGenCurrent.currentPage === 'initpool' ||
             linkGenCurrent.currentPage === 'reposition'
@@ -236,29 +269,14 @@ export const useAppChain = (): {
             linkGenSwap.navigate(`chain=${network.chainId}`);
         } else if (pathname.includes('chain')) {
             linkGenCurrent.navigate(`chain=${network.chainId}`);
-        } else if (
-            isPathUserAddress ||
-            isPathUserXpOrLeaderboard ||
-            isPathOnExplore
-        ) {
-            window.location.reload();
+        } else if (shouldStayOnCurrentExactPath) {
+            // do not navigate away from current path
         } else {
             linkGenCurrent.navigate();
         }
-        window.location.reload();
     }
 
-    // data from the SDK about the current chain in the connected wallet
-    // chain is validated upstream of this process
-    const chainData = useMemo<ChainSpec>(() => {
-        const output: ChainSpec =
-            lookupChain(activeNetwork.chainId) ?? lookupChain(defaultChain);
-        // return output varibale (chain data)
-        return output;
-    }, [activeNetwork.chainId]);
-
     return {
-        chainData,
         activeNetwork,
         chooseNetwork,
     };
