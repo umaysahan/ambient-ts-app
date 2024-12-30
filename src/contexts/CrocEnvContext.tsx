@@ -10,11 +10,14 @@ import {
     useState,
 } from 'react';
 import {
+    PRICE_WINDOW_GRANULARITY,
+    ZERO_ADDRESS,
     blastMainnet,
     ethereumMainnet,
     getDefaultPairForChain,
-    mainnetETH,
+    plumeMainnet,
     scrollMainnet,
+    swellMainnet,
 } from '../ambient-utils/constants';
 import { translateTokenSymbol } from '../ambient-utils/dataLayer';
 import { PoolIF, TokenIF } from '../ambient-utils/types';
@@ -49,7 +52,9 @@ export interface CrocEnvContextIF {
     provider: Provider;
     mainnetProvider: Provider | undefined;
     scrollProvider: Provider | undefined;
+    swellProvider: Provider | undefined;
     blastProvider: Provider | undefined;
+    plumeProvider: Provider | undefined;
 }
 
 export const CrocEnvContext = createContext({} as CrocEnvContextIF);
@@ -60,7 +65,6 @@ const mainnetProvider = new BatchedJsonRpcProvider(
         staticNetwork: true,
     },
 );
-
 const scrollProvider = new BatchedJsonRpcProvider(
     scrollMainnet.evmRpcUrl,
     parseInt(scrollMainnet.chainId),
@@ -68,9 +72,23 @@ const scrollProvider = new BatchedJsonRpcProvider(
         staticNetwork: true,
     },
 );
+const swellProvider = new BatchedJsonRpcProvider(
+    swellMainnet.evmRpcUrl,
+    parseInt(swellMainnet.chainId),
+    {
+        staticNetwork: true,
+    },
+);
 const blastProvider = new BatchedJsonRpcProvider(
     blastMainnet.evmRpcUrl,
     parseInt(blastMainnet.chainId),
+    {
+        staticNetwork: true,
+    },
+);
+const plumeProvider = new BatchedJsonRpcProvider(
+    plumeMainnet.evmRpcUrl,
+    parseInt(plumeMainnet.chainId),
     {
         staticNetwork: true,
     },
@@ -205,23 +223,27 @@ export const CrocEnvContextProvider = (props: { children: ReactNode }) => {
             setCrocEnv(newCrocEnv);
         }
     };
+
     useEffect(() => {
         if (isUserOnline) setNewCrocEnv();
     }, [provider, walletProvider, isUserOnline, userAddress]);
 
+    const fetchMainnetEthPrice = async () => {
+        const mainnetEthPrice = (
+            await cachedFetchTokenPrice(ZERO_ADDRESS, '0x1')
+        )?.usdPrice;
+        setEthMainnetUsdPrice(mainnetEthPrice);
+    };
+
     useEffect(() => {
-        if (provider && crocEnv && isUserOnline) {
-            (async () => {
-                const mainnetEthPrice = await cachedFetchTokenPrice(
-                    mainnetETH.address,
-                    ethereumMainnet.chainId,
-                    crocEnv,
-                );
-                const usdPrice = mainnetEthPrice?.usdPrice;
-                usdPrice !== Infinity && setEthMainnetUsdPrice(usdPrice);
-            })();
-        }
-    }, [crocEnv, provider, isUserOnline]);
+        fetchMainnetEthPrice();
+
+        const interval = setInterval(() => {
+            fetchMainnetEthPrice();
+        }, PRICE_WINDOW_GRANULARITY);
+
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         setDefaultUrlParams(createDefaultUrlParams(chainId));
@@ -237,7 +259,9 @@ export const CrocEnvContextProvider = (props: { children: ReactNode }) => {
         provider,
         mainnetProvider,
         scrollProvider,
+        swellProvider,
         blastProvider,
+        plumeProvider,
     };
 
     return (
