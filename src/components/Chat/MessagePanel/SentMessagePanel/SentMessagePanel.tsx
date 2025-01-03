@@ -245,7 +245,7 @@ function SentMessagePanel(props: SentMessageProps) {
                 setHasSeparator(true);
             }
         }
-        console.log('Address Updated:', props.address);
+        console.log('Address Updated :', props.address);
     }, [
         props.message,
         props.nextMessage,
