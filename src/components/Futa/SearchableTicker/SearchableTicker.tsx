@@ -18,11 +18,12 @@ import useOnClickOutside from '../../../utils/hooks/useOnClickOutside';
 import AuctionLoader from '../AuctionLoader/AuctionLoader';
 import Chart from '../Chart/Chart';
 // import Divider from '../Divider/FutaDivider';
+import { LuCheck, LuPencil } from 'react-icons/lu';
+import { auctionDataSets } from '../../../pages/platformFuta/Account/Account';
 import Typewriter from '../TypeWriter/TypeWriter';
 import styles from './SearchableTicker.module.css';
 import TickerItem from './TickerItem';
-import { auctionDataSets } from '../../../pages/platformFuta/Account/Account';
-import { LuCheck, LuPencil } from 'react-icons/lu';
+import { GoChevronRight } from 'react-icons/go';
 
 interface propsIF {
     auctions: sortedAuctionsIF;
@@ -85,8 +86,10 @@ export default function SearchableTicker(props: propsIF) {
     const [isMouseEnter, setIsMouseEnter] = useState(false);
     const customLoading = false;
 
-    const isMobile = useMediaQuery('(max-width: 768px)');
-
+    const isMobile = useMediaQuery('(max-width: 767px)');
+    const isTabletScreen = useMediaQuery(
+        '(min-width: 768px) and (max-width: 1200px)',
+    );
     // shape of data to create filter dropdown menu options
     interface filterOptionIF {
         label: string;
@@ -355,7 +358,9 @@ export default function SearchableTicker(props: propsIF) {
             <div className={styles.filters}>
                 <button
                     onClick={() => setShowComplete(!showComplete)}
-                    className={styles[showComplete ? 'button_on' : '']}
+                    className={
+                        styles[showComplete ? 'button_on' : 'button_off']
+                    }
                 >
                     <LuCheck size={BUTTON_ICON_SIZE} />
                     <div>COMPLETED</div>
@@ -364,7 +369,11 @@ export default function SearchableTicker(props: propsIF) {
                     <button
                         onClick={() => watchlists.toggle()}
                         className={
-                            styles[watchlists.shouldDisplay ? 'button_on' : '']
+                            styles[
+                                watchlists.shouldDisplay
+                                    ? 'button_on'
+                                    : 'button_off'
+                            ]
                         }
                     >
                         <FaEye size={BUTTON_ICON_SIZE} />
@@ -377,7 +386,7 @@ export default function SearchableTicker(props: propsIF) {
                             styles[
                                 dataState?.active === 'created'
                                     ? 'button_on'
-                                    : ''
+                                    : 'button_off'
                             ]
                         }
                         onClick={() => dataState?.toggle && dataState.toggle()}
@@ -442,12 +451,27 @@ export default function SearchableTicker(props: propsIF) {
         <div className={styles.ticker_table}>
             {filteredData.length ? (
                 <header>
-                    <p>TICKER</p>
-                    <p>MARKET CAP</p>
-                    <p>STATUS</p>
-                    <p>TIME</p>
-                    {dataState?.active === 'created' && <p>ETH Committed</p>}
-                    {dataState?.active === 'created' && <p>ETH Rewards</p>}
+                    <p className={styles.cell_left}>
+                        {
+                            // this icon is a stupid but effective way
+                            // ... way to keep the header text aligned
+                            // ... with the content below
+                        }
+                        <GoChevronRight
+                            size={20}
+                            className={styles.ticker_col_header_spacer}
+                        />
+                        TICKER
+                    </p>
+                    <p className={styles.cell_right}>MARKET CAP</p>
+                    <p className={styles.cell_center}>STATUS</p>
+                    <p className={styles.cell_right}>TIME</p>
+                    {dataState?.active === 'created' && (
+                        <p className={styles.cell_right}>ETH Committed</p>
+                    )}
+                    {dataState?.active === 'created' && (
+                        <p className={styles.cell_right}>ETH Rewards</p>
+                    )}
                 </header>
             ) : null}
             <div
@@ -495,13 +519,19 @@ export default function SearchableTicker(props: propsIF) {
             }}
             size={{
                 height:
-                    isAccount && tableParentRef.current
-                        ? tableParentRef.current.getBoundingClientRect()
-                              .height * 0.99
-                        : searchableTickerHeights.current,
+                    !isMobile || isTabletScreen
+                        ? isAccount && tableParentRef.current
+                            ? tableParentRef.current.getBoundingClientRect()
+                                  .height * 0.99
+                            : searchableTickerHeights.current
+                        : '90%',
             }}
             minHeight={200}
-            maxHeight={isAccount ? undefined : window.innerHeight - 200}
+            maxHeight={
+                isAccount || (isMobile && !isTabletScreen)
+                    ? undefined
+                    : window.innerHeight - 200
+            }
             onResize={(
                 evt: MouseEvent | TouchEvent,
                 dir: Direction,

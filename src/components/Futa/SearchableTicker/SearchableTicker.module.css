@@ -6,6 +6,7 @@
     gap: 8px;
 }
 
+/* styling for the resizable table element */
 .resizable {
     display: flex;
     flex-direction: column;
@@ -14,12 +15,6 @@
     --width-for-scrollbar: 8px;
     padding: 6px var(--width-for-scrollbar) 6px 2px;
     border: var(--futa-box-border);
-}
-
-@media (max-width: 500px) {
-    .resizable {
-        border: none;
-    }
 }
 
 /* element with search and filter interactables */
@@ -31,6 +26,7 @@
     margin-bottom: 8px;
     gap: 8px;
     width: 100%;
+    height: auto;
 }
 
 /* text search input and sort toggle */
@@ -40,6 +36,7 @@
     justify-content: space-between;
     align-items: center;
     gap: 4px;
+    height: 100%;
 }
 
 /* wrapper for search input icon, text field, and 'clear' button */
@@ -52,6 +49,7 @@
     max-width: 400px;
     gap: 4px;
     background-color: var(--dark2);
+    height: 100%;
 }
 
 /* text entry box for search input */
@@ -73,6 +71,7 @@
     display: flex;
     flex-direction: row;
     gap: 8px;
+    height: 100%;
 }
 
 /* individual data filter toggle buttons */
@@ -107,6 +106,16 @@
 /* change color of button contents when state is active */
 .button_on * {
     color: var(--accent1);
+}
+
+.button_off{
+    border: 1px solid var(--dark3) !important;
+    color: var(--text2) !important;
+
+}
+
+.button_off *{
+    color: var(--text2) !important;
 }
 
 /* clickable to open the sort dropdown menu */
@@ -190,10 +199,9 @@
     justify-content: center;
     align-items: center;
     height: 100%;
-    
 }
 
-.tickerItemContainer:hover .ticker_name_arrow{
+.tickerItemContainer:hover .ticker_name_arrow {
     opacity: 1;
 }
 
@@ -213,7 +221,6 @@
     width: 100%;
     display: flex;
     gap: 8px;
-    margin: 0 8px;
     overflow-y: auto;
     scrollbar-gutter: stable;
     /* background-color: red; */
@@ -228,7 +235,7 @@
     flex-direction: row;
     flex-wrap: nowrap;
     justify-content: space-between;
-    /* this has to be the rgba equiv of background color */
+    gap: 8px;
     background-color: var(--dark1);
     color: var(--text3);
     font-size: 12px;
@@ -240,6 +247,11 @@
     flex: 1 10 auto;
 }
 
+/* spacer to keep `TICKER` col header aligned with table data */
+.ticker_col_header_spacer {
+    visibility: hidden;
+}
+
 /* container for ticker line items */
 .ticker_table_content {
     display: flex;
@@ -247,11 +259,27 @@
     row-gap: 4px;
 }
 
+.cell_left {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.cell_center {
+    display: flex;
+    justify-content: center;
+}
+
+.cell_right {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .scrolling {
     scrollbar-color: var(--accent1) var(--dark2);
 }
 
-.marketCap, .timeRemaining {
+.marketCap,
+.timeRemaining {
     text-align: end;
 }
 
@@ -294,18 +322,40 @@
     flex-direction: column;
 }
 
-@media (max-width: 500px){
-    .tickerItemContainer, .tickerHeader {
+@media (max-width: 500px) {
+    /* remove visible border from table on small screens */
+    .resizable {
+        border: none;
+    }
+
+    /* remove left margin from table on small screens */
+    /* helps fit everything in the viewport */
+    .ticker_table {
+        margin-left: 0px;
+    }
+
+    /* remove spacer icon in `TICKER` col header on small screens */
+    .ticker_col_header_spacer {
+        display: none;
+    .tickerItemContainer,
+    .tickerHeader {
         grid-template-columns: 1fr 1fr 50px 60px;
     }
-}
+}}
 
 @media (min-width: 768px) {
     .container {
-        display: grid;
+        display: flex
     }
-}
 
+    .header{
+        height: 28px;
+        padding: 0 8px;
+    }
+    .filters > button {
+        height: auto;
+}
+}
 @media (min-width: 1280px) {
     .content h2 {
         color: var(--text1, #ceffff);
@@ -314,33 +364,27 @@
     }
 }
 
-@media (max-width: 968px) {
+/* @media (min-width: 768px) and (max-width: 1024px) {
     .contentContainer {
-        height: calc(100vh - 186px) !important;
+        height: calc(100dvh - 100px) !important;
         justify-content: space-between;
-        padding-bottom: 1rem;
     }
-}
-
-@media (max-width: 768px) {
-    .contentContainer {
-        padding-bottom: 0;
+    .header {
+        flex-direction: row;
     }
-}
+} */
 
-/* WHY DOES THE APP BREAK WHEN I REMOVE THIS */
-/* IF I TAKE IT OUT THE ENTIRE TABLE DISAPPEARS */
-/* IT SHOULD BE REDUNDANT WITH THE FIRST RULE IN THIS FILE */
-.container {
-    display: flex;
-    flex-direction: column;
+@media (max-width: 767px) {
+    .header {
+        flex-direction: column;
+    }
 }
 
 
 @media (max-width: 400px) {
     .header {
         display: grid;
-        grid-template-areas: 
+        grid-template-areas:
             'top'
             'bottom';
     }
@@ -351,5 +395,10 @@
 
     .filters {
         grid-area: bottom;
+    }
+
+    /* individual column headers in the ticker table */
+    .ticker_table > header > * {
+        font-size: 10px;
     }
 }
