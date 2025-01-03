@@ -31,6 +31,7 @@ import {
     getUserListWithRestEndpoint,
     updateLikesDislikesCountEndpoint,
     updateUnverifiedMessagesEndpoint,
+    getUsersByIdListEndpoint,
 } from '../ChatConstants/ChatEndpoints';
 
 import useWebSocket, { ReadyState } from 'react-use-websocket';
@@ -44,6 +45,7 @@ import { ChatWsQueryParams, LikeDislikePayload } from '../ChatIFs';
 import { domDebug, getTimeForLog } from '../DomDebugger/DomDebuggerUtils';
 import { Message } from '../Model/MessageModel';
 import { User } from '../Model/UserModel';
+import MentionAutoComplete from '../MessagePanel/InputBox/MentionAutoComplete/MentionAutoComplete';
 
 type ChatSocketListener = {
     msg: string;
@@ -96,6 +98,8 @@ const useChatSocket = (
     const { updateUserAvatarData } = useContext(UserDataContext);
 
     const url = CHAT_BACKEND_URL + '/chat/api/subscribe/';
+
+    const [shouldUserFetched, setShouldUserFetched] = useState(false);
 
     // handle query params
     const qp: ChatWsQueryParams = {
@@ -157,6 +161,7 @@ const useChatSocket = (
         if (isChatOpen) {
             doHandshake();
         }
+        console.log('address in chatsocket: ', address);
     }, [address, ensName, room, isChatOpen, isUserIdle]);
 
     useEffect(() => {
@@ -321,6 +326,75 @@ const useChatSocket = (
         return data;
     }
 
+    function collectSendersAndReactions(messages: Message[]) {
+        const resultSet = new Set<string>();
+
+        messages.forEach((message: Message) => {
+            resultSet.add(message.sender);
+
+            if (message.reactions) {
+                Object.values(message.reactions).forEach(
+                    (userIds: string[]) => {
+                        userIds.forEach((userId) => {
+                            if (userId !== message.sender) {
+                                resultSet.add(userId);
+                            }
+                        });
+                    },
+                );
+            }
+        });
+
+        return resultSet;
+    }
+
+    async function getUsersByIdList() {
+        try {
+            const resultSet = collectSendersAndReactions(messages);
+
+            if (resultSet.size === 0) {
+                return;
+            }
+
+            const resultString = Array.from(resultSet).join(',');
+
+            const response = await fetch(
+                `${CHAT_BACKEND_URL}${getUsersByIdListEndpoint}${resultString}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                },
+            );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const responseData = await response.json();
+
+            const userData = responseData.data;
+
+            if (!Array.isArray(userData) || userData.length === 0) {
+                return;
+            }
+
+            const userMap = new Map<string, User>();
+            userData.forEach((user: User) => {
+                userMap.set(user._id, user);
+            });
+
+            setUserMap(userMap);
+            setUsers(userData);
+
+            const userToken = getLS(LS_USER_VERIFY_TOKEN, address);
+            setUserVrfToken(userToken ? userToken : '');
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
     async function updateUnverifiedMessages(verifyDate: Date, endDate?: Date) {
         const nonVerifiedMessages = getUnverifiedMsgList(address);
         const vrfTkn = getLS(LS_USER_VERIFY_TOKEN, address);
@@ -409,13 +483,18 @@ const useChatSocket = (
         if (roomRef.current == room) return;
         sendToSocket('join-room', { roomInfo: room, oldRoom: roomRef.current });
         roomRef.current = room;
+        setShouldUserFetched(true);
     }, [room]);
 
     useEffect(() => {
-        if (isChatOpen) {
-            updateUserCache();
+        if (isChatOpen && shouldUserFetched) {
+            if (room === 'Global') {
+                updateUserCache();
+            } else {
+                getUsersByIdList();
+            }
         }
-    }, [messages, isChatOpen]);
+    }, [messages, isChatOpen, room, MentionAutoComplete]);
 
     async function deleteMsgFromList(msgId: string) {
         const payload = {
@@ -682,6 +761,7 @@ const useChatSocket = (
         updateUserWithAvatarImage,
         addListener,
         isWsConnected,
+        getUsersByIdList,
     };
 };
 

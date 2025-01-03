@@ -245,9 +245,22 @@ function SentMessagePanel(props: SentMessageProps) {
                 setHasSeparator(true);
             }
         }
-    }, [props.message, props.nextMessage, props.previousMessage]);
+        console.log('Address Updated :', props.address);
+    }, [
+        props.message,
+        props.nextMessage,
+        props.previousMessage,
+        props.address,
+    ]);
 
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (props.address) {
+            console.log('Address changed:', props.address);
+            // Trigger any updates or recalculations needed
+        }
+    }, [props.address]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -821,7 +834,8 @@ function SentMessagePanel(props: SentMessageProps) {
                                         {/* {myJazzicon} */}
                                         {!BASIC_CHAT_MODE &&
                                             props.message &&
-                                            props.message.chainId && (
+                                            props.message.chainId &&
+                                            props.room === 'Admins' && (
                                                 <img
                                                     className={`${styles.chain_logo} ${isChainNameTestnet(lookupChain(props.message.chainId).displayName) ? styles.testnet : ' '} `}
                                                     src={
@@ -846,6 +860,7 @@ function SentMessagePanel(props: SentMessageProps) {
                                                     }
                                                 ></img>
                                             )}
+
                                         {getAvatarForChat(
                                             props.message.walletID,
                                             props.userMap?.get(
