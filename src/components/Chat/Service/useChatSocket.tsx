@@ -45,6 +45,7 @@ import { ChatWsQueryParams, LikeDislikePayload } from '../ChatIFs';
 import { domDebug, getTimeForLog } from '../DomDebugger/DomDebuggerUtils';
 import { Message } from '../Model/MessageModel';
 import { User } from '../Model/UserModel';
+import MentionAutoComplete from '../MessagePanel/InputBox/MentionAutoComplete/MentionAutoComplete';
 
 type ChatSocketListener = {
     msg: string;
@@ -160,6 +161,7 @@ const useChatSocket = (
         if (isChatOpen) {
             doHandshake();
         }
+        console.log('address in chatsocket: ', address);
     }, [address, ensName, room, isChatOpen, isUserIdle]);
 
     useEffect(() => {
@@ -330,44 +332,67 @@ const useChatSocket = (
         messages.forEach((message: Message) => {
             resultSet.add(message.sender);
 
-            Object.values(message.reactions).forEach((userIds: string[]) => {
-                userIds.forEach((userId) => {
-                    if (userId !== message.sender) {
-                        resultSet.add(userId);
-                    }
-                });
-            });
+            if (message.reactions) {
+                Object.values(message.reactions).forEach(
+                    (userIds: string[]) => {
+                        userIds.forEach((userId) => {
+                            if (userId !== message.sender) {
+                                resultSet.add(userId);
+                            }
+                        });
+                    },
+                );
+            }
         });
 
         return resultSet;
     }
 
     async function getUsersByIdList() {
-        // Collect the IDs as a Set, then convert it to a comma-separated string
-        const resultSet = collectSendersAndReactions(messages); // Assuming it's returning a Set
+        try {
+            const resultSet = collectSendersAndReactions(messages);
 
-        console.log('>>> resultSet:', resultSet);
+            if (resultSet.size === 0) {
+                return;
+            }
 
-        if (resultSet.entries.length == 0) return;
+            const resultString = Array.from(resultSet).join(',');
 
-        // Convert Set to a comma-separated string
-        const resultString = Array.from(resultSet).join(',');
-
-        console.log('resultString:', resultString);
-
-        // Make the fetch request to get users by ID list
-        const response = await fetch(
-            `${CHAT_BACKEND_URL}${getUsersByIdListEndpoint}${resultString}`,
-            {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
+            const response = await fetch(
+                `${CHAT_BACKEND_URL}${getUsersByIdListEndpoint}${resultString}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                 },
-            },
-        );
+            );
 
-        const data = await response.json();
-        return data;
+            if (!response.ok) {
+                return;
+            }
+
+            const responseData = await response.json();
+
+            const userData = responseData.data;
+
+            if (!Array.isArray(userData) || userData.length === 0) {
+                return;
+            }
+
+            const userMap = new Map<string, User>();
+            userData.forEach((user: User) => {
+                userMap.set(user._id, user);
+            });
+
+            setUserMap(userMap);
+            setUsers(userData);
+
+            const userToken = getLS(LS_USER_VERIFY_TOKEN, address);
+            setUserVrfToken(userToken ? userToken : '');
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     async function updateUnverifiedMessages(verifyDate: Date, endDate?: Date) {
@@ -469,7 +494,7 @@ const useChatSocket = (
                 getUsersByIdList();
             }
         }
-    }, [messages, isChatOpen, room]);
+    }, [messages, isChatOpen, room, MentionAutoComplete]);
 
     async function deleteMsgFromList(msgId: string) {
         const payload = {
@@ -736,6 +761,7 @@ const useChatSocket = (
         updateUserWithAvatarImage,
         addListener,
         isWsConnected,
+        getUsersByIdList,
     };
 };
 

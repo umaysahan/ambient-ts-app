@@ -200,7 +200,6 @@ export default function Room(props: propsIF) {
     useEffect(() => {
         processRoomList();
         handlePoolRedirect(props.room);
-        console.log(props.selectedRoom);
     }, [
         isCurrentPool,
         baseToken.symbol,

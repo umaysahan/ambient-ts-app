@@ -374,10 +374,10 @@ function ChatPanel(props: propsIF) {
     }, [isChatOpen == true]);
 
     useEffect(() => {
+        console.log('userAddress: ', userAddress);
         if (room == undefined) {
             return;
         }
-        console.log('room in chatpanel:', room);
 
         if (notConnectedUserInterval) {
             clearInterval(notConnectedUserInterval);
@@ -485,6 +485,8 @@ function ChatPanel(props: propsIF) {
         } else {
             setCurrentUser(undefined);
         }
+        console.log('currentuser: ', currentUser);
+        console.log('USERADRESSSS ', userAddress);
     }, [ens, userAddress, isChatOpen, isFullScreen, setUserCurrentPool]);
 
     useEffect(() => {
@@ -988,7 +990,9 @@ function ChatPanel(props: propsIF) {
                             isUserLoggedIn={isUserConnected as boolean}
                             message={item}
                             ensName={ensName}
-                            isCurrentUser={item && item.sender === currentUser}
+                            isCurrentUser={
+                                item && item.walletID === currentUser
+                            }
                             currentUser={currentUser}
                             resolvedAddress={resolvedAddressFromContext}
                             connectedAccountActive={userAddress}

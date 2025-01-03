@@ -550,6 +550,7 @@ export default function MessageInput(props: MessageInputProps) {
         if (e.target.value.indexOf('@') !== -1 && ALLOW_MENTIONS) {
             const filteredUsers = filterUsers(e.target.value.split('@')[1]);
             setFilteredUsers(filteredUsers);
+
             if (possibleMentUser === null) {
                 setMentPanelActive(true);
                 setPossibleMentUser(filteredUsers[0] ?? null);

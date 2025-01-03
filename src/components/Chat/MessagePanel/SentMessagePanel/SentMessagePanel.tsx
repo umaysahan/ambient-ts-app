@@ -245,9 +245,22 @@ function SentMessagePanel(props: SentMessageProps) {
                 setHasSeparator(true);
             }
         }
-    }, [props.message, props.nextMessage, props.previousMessage]);
+        console.log('Address Updated:', props.address);
+    }, [
+        props.message,
+        props.nextMessage,
+        props.previousMessage,
+        props.address,
+    ]);
 
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (props.address) {
+            console.log('Address changed:', props.address);
+            // Trigger any updates or recalculations needed
+        }
+    }, [props.address]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -305,7 +318,6 @@ function SentMessagePanel(props: SentMessageProps) {
         if (!hasFound) {
             setHasUserReacted(false);
         }
-        console.log('messages in sentmessGEPANEL:', props.message);
     }, [props.message]);
 
     useEffect(() => {
