@@ -145,7 +145,7 @@ export default function Room(props: propsIF) {
             if (!found) {
                 newRoomList.push({
                     name: getRoomNameFromPool(pool),
-                    shownName: getRoomNameFromPool(pool),
+                    shownName: getRoomNameFromPool(pool) + ' ❤️',
                     base: pool.base.symbol,
                     quote: pool.quote.symbol,
                     isFavourite: true,

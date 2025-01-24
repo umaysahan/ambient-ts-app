@@ -118,6 +118,7 @@ function SentMessagePanel(props: SentMessageProps) {
     const [daySeparator, setdaySeparator] = useState('');
     const [flipped, setFlipped] = useState(false);
     const [flipRead, setFlipRead] = useState(false);
+    const [isHovering, setIsHovering] = useState(false);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [count, setCount] = useState(0);
@@ -248,6 +249,14 @@ function SentMessagePanel(props: SentMessageProps) {
     }, [props.message, props.nextMessage, props.previousMessage]);
 
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    const handleMouseOver = () => {
+        setIsHovering(true);
+    };
+
+    const handleMouseOut = () => {
+        setIsHovering(false);
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -463,6 +472,11 @@ function SentMessagePanel(props: SentMessageProps) {
                         );
                     })}
                 </div>
+                <div className={styles.chain_info} style={{ opacity: 1 }}>
+                    {props.room === 'Admins' &&
+                        props.message.chainId &&
+                        lookupChain(props.message.chainId).displayName}
+                </div>
                 <div className={styles.roomInfo}>
                     {' '}
                     {props.room === 'Admins' ? props.message.roomInfo : ''}
@@ -616,8 +630,46 @@ function SentMessagePanel(props: SentMessageProps) {
         }
     }
 
+    const shouldShowName = () => {
+        if (showName && !props.isCurrentUser) {
+            return true;
+        } else if (
+            showName &&
+            props.isCurrentUser &&
+            !isHovering &&
+            props.isUserLoggedIn
+        ) {
+            return false;
+        } else if (showName && isHovering && props.isCurrentUser) {
+            return true;
+        }
+        return false;
+    };
+
+    const shouldShowVerifiedIcon = () => {
+        if (showAvatar && props.message.isVerified && !props.isCurrentUser) {
+            return true;
+        } else if (
+            showAvatar &&
+            props.message.isVerified &&
+            props.isCurrentUser &&
+            isHovering
+        ) {
+            return true;
+        } else if (
+            showAvatar &&
+            props.message.isVerified &&
+            props.isCurrentUser &&
+            !isHovering
+        ) {
+            return false;
+        }
+    };
+
     return (
         <div
+            onMouseOver={handleMouseOver}
+            onMouseOut={handleMouseOut}
             data-message-id={props.message._id}
             data-message-content={props.message.message}
             className={`${styles.msg_bubble_container} messageBubble ${
@@ -891,17 +943,16 @@ function SentMessagePanel(props: SentMessageProps) {
                                                     : ''
                                         }
                                     >
-                                        <span
+                                        <div
                                             className={
                                                 styles.name_default_label
                                             }
                                             onClick={goToProfilePage}
                                         >
-                                            {showName &&
+                                            {shouldShowName() &&
                                                 getShownName(props.message)}
-                                        </span>
-                                        {showAvatar &&
-                                            props.message.isVerified &&
+                                        </div>
+                                        {shouldShowVerifiedIcon() &&
                                             ALLOW_AUTH && (
                                                 <div
                                                     className={
@@ -997,6 +1048,7 @@ function SentMessagePanel(props: SentMessageProps) {
                                         showAvatar={showAvatar}
                                     />
                                     {!isPosition && renderMessage()}
+                                    {props.isCurrentUser}
                                 </div>
 
                                 <div className={styles.reply_message}>
