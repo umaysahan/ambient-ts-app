@@ -116,7 +116,6 @@ function SentMessagePanel(props: SentMessageProps) {
     const [showAvatar, setShowAvatar] = useState<boolean>(true);
     const [showName, setShowName] = useState<boolean>(true);
     const [daySeparator, setdaySeparator] = useState('');
-    const [flipped, setFlipped] = useState(false);
     const [flipRead, setFlipRead] = useState(false);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -604,9 +603,7 @@ function SentMessagePanel(props: SentMessageProps) {
                 props.mentionIndex !== undefined
                     ? 'mentionedMessage mentIndex-' + props.mentionIndex
                     : ''
-            }  ${flipped ? styles.flipped : ''}  ${
-                flipRead ? styles.flip_read : ''
-            } 
+            }
             ${
                 props.message.repliedMessage && ALLOW_REPLIES
                     ? styles.replied_message_container
@@ -671,10 +668,6 @@ function SentMessagePanel(props: SentMessageProps) {
                                         props.message.sender ===
                                         props.currentUser
                                     }
-                                    setFlipped={() => {
-                                        setFlipped(true);
-                                        setFlipRead(true);
-                                    }}
                                     isUserVerified={props.isUserVerified}
                                     tsForRefresh={timestampForChildRefresh}
                                     deleteMessageFromList={deleteMsgFromList}
@@ -1054,13 +1047,6 @@ function SentMessagePanel(props: SentMessageProps) {
                     </div>
 
                     <div className={styles.msg_bubble_back}>
-                        <div
-                            className={styles.flip_trigger}
-                            onClick={() => {
-                                setFlipped(false);
-                                setFlipRead(false);
-                            }}
-                        ></div>
                         <div
                             className={styles.flip_trigger_lefted}
                             onMouseEnter={() => {

@@ -23,7 +23,6 @@ interface propsIF {
     isModerator: boolean;
     isUsersMessage: boolean;
     tsForRefresh: number;
-    setFlipped: (val: boolean) => void;
     deleteMessageFromList: (id: string) => void;
     showDeleteConfirmation: boolean;
     setShowDeleteConfirmation: Dispatch<SetStateAction<boolean>>;
@@ -83,7 +82,6 @@ export default function Options(props: propsIF) {
                 <AiOutlineRotateLeft
                     className=''
                     onClick={() => {
-                        props.setFlipped(true);
                         setShowDetailsGroup(false);
                     }}
                     size={14}
