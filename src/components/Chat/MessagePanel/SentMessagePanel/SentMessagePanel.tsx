@@ -116,7 +116,6 @@ function SentMessagePanel(props: SentMessageProps) {
     const [showAvatar, setShowAvatar] = useState<boolean>(true);
     const [showName, setShowName] = useState<boolean>(true);
     const [daySeparator, setdaySeparator] = useState('');
-    const [flipRead, setFlipRead] = useState(false);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [count, setCount] = useState(0);
@@ -1047,17 +1046,6 @@ function SentMessagePanel(props: SentMessageProps) {
                     </div>
 
                     <div className={styles.msg_bubble_back}>
-                        <div
-                            className={styles.flip_trigger_lefted}
-                            onMouseEnter={() => {
-                                setFlipRead(true);
-                            }}
-                            onMouseLeave={() => {
-                                // setFlipRead(false);
-                            }}
-                        >
-                            💬
-                        </div>
                         <div className={styles.msg_bubble_back_content}>
                             <div
                                 className={`${
