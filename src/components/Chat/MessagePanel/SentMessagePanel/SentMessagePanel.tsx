@@ -442,10 +442,11 @@ function SentMessagePanel(props: SentMessageProps) {
                         );
                     })}
                 </div>
-                <div className={styles.roomInfo}>
-                    {' '}
-                    {props.room === 'Admins' ? props.message.roomInfo : ''}
-                </div>
+                {props.room === 'Admins' && props.message.roomInfo && (
+                    <div className={styles.roomInfo}>
+                        {props.message.roomInfo}
+                    </div>
+                )}
             </div>
         );
     }
@@ -645,13 +646,6 @@ function SentMessagePanel(props: SentMessageProps) {
             {!props.message.isDeleted || props.isModerator ? (
                 <div className={styles.msg_bubble_content}>
                     <div className={styles.msg_bubble_front}>
-                        {/* <div
-                            className={styles.flip_trigger}
-                            onClick={() => {
-                                setFlipped(true);
-                            }}
-                        ></div> */}
-
                         {props.address && !props.message.isDeleted && (
                             <div
                                 ref={optionsButtonRef}
@@ -706,10 +700,8 @@ function SentMessagePanel(props: SentMessageProps) {
                             </div>
                         )}
 
-                        <div>
-                            {daySeparator === '' ? (
-                                ''
-                            ) : daySeparator !== '' ? (
+                        <>
+                            {daySeparator && (
                                 <p
                                     className={
                                         styles.separator +
@@ -719,8 +711,6 @@ function SentMessagePanel(props: SentMessageProps) {
                                 >
                                     {daySeparator}
                                 </p>
-                            ) : (
-                                ''
                             )}
                             {/* {'repliedMessage' in props.message &&
                                 (showAvatar ? (
@@ -751,7 +741,7 @@ function SentMessagePanel(props: SentMessageProps) {
                                 />
                             )}
 
-                            {props.message.repliedMessage && ALLOW_REPLIES ? (
+                            {props.message.repliedMessage && ALLOW_REPLIES && (
                                 <div className={styles.replied_box}>
                                     <ReplyMessage
                                         isReplyButtonPressed={false}
@@ -767,8 +757,6 @@ function SentMessagePanel(props: SentMessageProps) {
                                         userMap={props.userMap}
                                     />
                                 </div>
-                            ) : (
-                                ''
                             )}
                             <div
                                 className={
@@ -832,24 +820,6 @@ function SentMessagePanel(props: SentMessageProps) {
                                                 props.message.sender,
                                             ),
                                         )}
-                                    </div>
-                                )}
-                                {!showAvatar && (
-                                    <div
-                                        style={{
-                                            display: 'none',
-                                            marginLeft: '10px',
-                                        }}
-                                    >
-                                        <div className={styles.nft_container}>
-                                            {/* {myJazzicon} */}
-                                            {getAvatarForChat(
-                                                props.message.walletID,
-                                                props.userMap?.get(
-                                                    props.message.sender,
-                                                ),
-                                            )}
-                                        </div>
                                     </div>
                                 )}
                                 <div className={styles.message_item}>
@@ -981,8 +951,6 @@ function SentMessagePanel(props: SentMessageProps) {
                                     <p className={styles.message_date}>
                                         {formatAMPM(props.message.createdAt)}
                                     </p>
-
-                                    <div></div>
                                 </div>
 
                                 {/* {snackbarContent} */}
@@ -1042,16 +1010,16 @@ function SentMessagePanel(props: SentMessageProps) {
                                                                 </div>
                                                             }
                                                         >
-                                                            <div
+                                                            <span
                                                                 key={
                                                                     props
                                                                         .message
                                                                         ._id +
                                                                     reaction
                                                                 }
-                                                                className={`
-                                                            ${styles.reaction_node} 
-                                                        `}
+                                                                className={
+                                                                    styles.reaction_node
+                                                                }
                                                                 onClick={() => {
                                                                     if (
                                                                         props.currentUser !=
@@ -1067,7 +1035,7 @@ function SentMessagePanel(props: SentMessageProps) {
                                                                 }}
                                                             >
                                                                 {reaction}
-                                                            </div>
+                                                            </span>
                                                         </TextOnlyTooltip>
                                                     );
                                                 },
@@ -1076,15 +1044,13 @@ function SentMessagePanel(props: SentMessageProps) {
                                     </div>
                                 )}
 
-                            {hasSeparator ? (
+                            {hasSeparator && (
                                 <hr
                                     className={styles.separator}
                                     style={{ cursor: 'default' }}
                                 />
-                            ) : (
-                                <></>
                             )}
-                        </div>
+                        </>
                     </div>
 
                     <div className={styles.msg_bubble_back}>
@@ -1106,9 +1072,6 @@ function SentMessagePanel(props: SentMessageProps) {
                         >
                             💬
                         </div>
-                        {/* <div className={styles.like_btn_base}> + </div>
-                    <div className={styles.like_btn_base}> - </div> */}
-
                         <div className={styles.msg_bubble_back_content}>
                             <div
                                 className={`${
@@ -1149,57 +1112,49 @@ function SentMessagePanel(props: SentMessageProps) {
                             </div>
 
                             {likeCount + dislikeCount > 0 && (
-                                <>
+                                <div
+                                    className={styles.like_dislike_bar_wrapper}
+                                >
                                     <div
                                         className={
-                                            styles.like_dislike_bar_wrapper
+                                            styles.like_dislike_node_wrapper
                                         }
+                                        style={{
+                                            width:
+                                                (likeCount /
+                                                    (dislikeCount +
+                                                        likeCount)) *
+                                                    100 +
+                                                '%',
+                                        }}
                                     >
                                         <div
-                                            className={
-                                                styles.like_dislike_node_wrapper
-                                            }
-                                            style={{
-                                                width:
-                                                    (likeCount /
-                                                        (dislikeCount +
-                                                            likeCount)) *
-                                                        100 +
-                                                    '%',
-                                            }}
-                                        >
-                                            <div
-                                                className={
-                                                    styles.like_dislike_node
-                                                }
-                                            ></div>
-                                        </div>
-                                        <div
-                                            className={
-                                                styles.like_dislike_node_wrapper
-                                            }
-                                            style={{
-                                                width:
-                                                    (dislikeCount /
-                                                        (dislikeCount +
-                                                            likeCount)) *
-                                                        100 +
-                                                    '%',
-                                            }}
-                                        >
-                                            <div
-                                                className={`${styles.like_dislike_node} ${styles.dislike_node}`}
-                                            ></div>
-                                        </div>
+                                            className={styles.like_dislike_node}
+                                        ></div>
                                     </div>
-                                </>
+                                    <div
+                                        className={
+                                            styles.like_dislike_node_wrapper
+                                        }
+                                        style={{
+                                            width:
+                                                (dislikeCount /
+                                                    (dislikeCount +
+                                                        likeCount)) *
+                                                    100 +
+                                                '%',
+                                        }}
+                                    >
+                                        <div
+                                            className={`${styles.like_dislike_node} ${styles.dislike_node}`}
+                                        ></div>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     </div>
                 </div>
-            ) : (
-                <></>
-            )}
+            ) : null}
         </div>
     );
 }
